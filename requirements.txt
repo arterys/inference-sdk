@@ -1,0 +1,7 @@
+boto3
+flask
+numpy
+pydicom
+pyyaml
+requests-toolbelt
+SimpleITK
