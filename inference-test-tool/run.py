@@ -87,6 +87,12 @@ def upload_study_me(file_path, is_segmentation_model, host, port):
     print("JSON response:", json_response)
     mask_count = len(json_response["parts"])
 
+    # Assert that we get one binary part for each object in 'parts'
+    # The additional two multipart object are: JSON response and request:response digests
+    assert mask_count == len(multipart_data.parts) - 2, \
+        "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
+        .format(len(multipart_data.parts) - 2, mask_count)
+    
     masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
 
     output_folder = 'output'
