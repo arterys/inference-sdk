@@ -29,12 +29,21 @@ from utils import load_image_data, sort_images
 def upload_study_me(file_path, is_segmentation_model, host, port):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
-    request_json = {'request': 'post', 
-                    'route': '/',
-                    'inference_command': 'get-probability-mask' if is_segmentation_model else 'get-bounding-box-2d'}
     
     images = load_image_data(file_path)
     images = sort_images(images)
+
+    if not is_segmentation_model:
+        inference_command = 'get-bounding-box-2d'
+    elif images[0].position is None:
+        # No spatial information available. Perform 2D segmentation
+        inference_command = 'get-probability-mask-2D'
+    else:
+        inference_command = 'get-probability-mask-3D'
+        
+    request_json = {'request': 'post', 
+                    'route': '/',
+                    'inference_command': inference_command}
 
     width = 0
     height = 0
