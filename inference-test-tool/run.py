@@ -23,6 +23,7 @@ from requests_toolbelt.multipart import decoder
 import pydicom
 import numpy as np
 import test_inference_mask
+import test_inference_boxes
 
 from utils import load_image_data, sort_images
 
@@ -88,9 +89,8 @@ def upload_study_me(file_path, is_segmentation_model, host, port):
 
     masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
 
+    output_folder = 'output'
     if is_segmentation_model:
-        output_folder = 'output'
-
         if images[0].position is None:
             # We must sort the images by their instance UID based on the order of the response:
             identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
@@ -106,6 +106,9 @@ def upload_study_me(file_path, is_segmentation_model, host, port):
         print("Saving output masks to files 'output/output_masks_*.npy")
         for index, mask in enumerate(masks):
             mask.tofile('output/output_masks_{}.npy'.format(index + 1))
+    else:
+        boxes = json_response['bounding_boxes_2d']
+        test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
 
 
 def parse_args():
