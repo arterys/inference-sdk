@@ -92,6 +92,23 @@ For example:
 }
 ```
 
+##### Classification models
+
+The web viewer currently does not support classification models but we can work around that. 
+To do so send a bounding box for each image with the size of the whole image and the corresponding output label.
+So the JSON you would return could look like this (where `bottom_right` is the size of the image):
+
+```json
+{ "protocol_version":"1.0",
+  "bounding_boxes_2d": [{ "label": "Lesion #1", 
+                          "SOPInstanceUID": "2.25.336451217722347364678629652826931415692", 
+                          "top_left": [0, 0], 
+                          "bottom_right": [1024, 1024]
+                          }]
+}
+```
+
+
 ##### 3D Segmentation masks
 
 For a 3D segmentation producing model, the output is expected to be:
