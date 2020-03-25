@@ -34,7 +34,7 @@ def generate_images_with_boxes(images, boxes, output_folder):
             boxes.remove(box)
             
         # write image to output folder
-        output_filename = os.path.join(output_folder, str(index) + os.path.basename(os.path.normpath(image.path)))
+        output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
         pil_image.save(output_filename)
 
