@@ -255,11 +255,11 @@ Parameters:
 You can check if the model's output will be correctly displayed on the Arterys web app.
 
 For example, if you have a study whose dicom files you have placed in the `<ARTERYS_SDK_ROOT>/inference-test-tool/study-folder` 
-folder, you may send this study to your segmentation model listening on port 8600 on the host OS by running the following 
+folder, you may send this study to your segmentation model listening on port 8900 on the host OS by running the following 
 command in the `inference-test-tool` directory:
 
 ```bash
-./send-inference-request.sh -s --host 0.0.0.0 --port 8600 ./study-folder/
+./send-inference-request.sh -s --host 0.0.0.0 --port 8900 ./study-folder/
 ```
 
 For this to work, the folder where you have your DICOM files (`study-folder` in this case) must be a subfolder of 
