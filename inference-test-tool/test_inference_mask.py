@@ -92,7 +92,7 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
     mask_alpha = 0.5
     for index, (image, mask) in enumerate(zip(images, masks)):
         dcm = pydicom.dcmread(image.path)
-        pixels = _get_pixels(dcm)
+        pixels = get_pixels(dcm)
         max_value = np.iinfo(pixels.dtype).max
 
         # get mask for this image
