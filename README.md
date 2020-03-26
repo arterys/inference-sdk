@@ -126,7 +126,7 @@ The data format of the probability mask binary buffers is as follows:
 ##### 2D Segmentation masks
 
 If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the previous section
- still applies with some modifications.
+still applies with some modifications.
 
 First, your JSON response should look like this:
 
@@ -144,7 +144,7 @@ First, your JSON response should look like this:
 }
 ```
 
-> Note: There is no need to specify `depth` and `timepoint` in `binary_data_shape` but there is a `dicom_image`
+> Note: There is no need to specify `depth` and `timepoints` in `binary_data_shape` but there is a `dicom_image`
 > object that allows identifying the image.
 
 > Also, `frame_number` is optional. Can be used for multi-frame instances.

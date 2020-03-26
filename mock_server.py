@@ -57,21 +57,24 @@ def get_bounding_box_2d_response(json_input, dicom_instances):
     }
     return response_json, []
 
-def get_probability_mask_response(json_input, dicom_fpath_list):
+def get_probability_mask_3D_response(json_input, dicom_instances):
+    # Assuming that all files have the same size
+    dcm = pydicom.read_file(dicom_instances[0])
+
     response_json = {
-            'protocol_version': '1.0',
-            'parts': [
-                {
-                    'label': 'Mock seg',
-                    'binary_type': 'probability_mask',
-                    'binary_data_shape': {
-                        'timepoints': 1,
-                        'depth': json_input['depth'],
-                        'width': json_input['width'],
-                        'height': json_input['height']
-                    }
+        'protocol_version': '1.0',
+        'parts': [
+            {
+                'label': 'Mock seg',
+                'binary_type': 'probability_mask',
+                'binary_data_shape': {
+                    'timepoints': 1,
+                    'depth': len(dicom_instances),
+                    'width': dcm.Columns,
+                    'height': dcm.Rows
                 }
-            ]
+            }
+        ]
     }
 
     array_shape = (json_input['depth'], json_input['height'], json_input['width'])
@@ -89,6 +92,37 @@ def get_probability_mask_response(json_input, dicom_fpath_list):
     return response_json, [mask]
 
 
+def get_probability_mask_2D_response(json_input, dicom_instances):
+    response_json = {
+            'protocol_version': '1.0',
+            'parts': []
+    }
+
+    masks = []
+    for dicom_file in dicom_instances:
+        dcm = pydicom.read_file(dicom_file)
+        response_json['parts'].append(
+            {
+                'label': 'Mock seg',
+                'binary_type': 'probability_mask',
+                'binary_data_shape': {
+                    'width': dcm.Columns,
+                    'height': dcm.Rows
+                },
+                'dicom_image': {
+                    'SOPInstanceUID': dcm.SOPInstanceUID
+                }
+            }
+        )
+        array_shape = (dcm.Rows, dcm.Columns)
+
+        # Generate empty mask (Call your model instead)
+        mask = numpy.zeros(array_shape, dtype=numpy.uint8)
+        masks.append(mask)
+
+    return response_json, masks
+
+
 def request_handler(json_input, dicom_instances, input_digest):
     """
     A mock inference model that returns a mask array of ones of size (height * depth, width)
@@ -103,8 +137,10 @@ def request_handler(json_input, dicom_instances, input_digest):
     
     if json_input['inference_command'] == 'get-bounding-box-2d':
         return get_bounding_box_2d_response(json_input, dicom_instances)
-    elif json_input['inference_command'] == 'get-probability-mask':
-        return get_probability_mask_response(json_input, dicom_instances)
+    elif json_input['inference_command'] == 'get-probability-mask-3D':
+        return get_probability_mask_3D_response(json_input, dicom_instances)
+    elif json_input['inference_command'] == 'get-probability-mask-2D':
+        return get_probability_mask_2D_response(json_input, dicom_instances)
     else:
         return get_empty_response()
 
