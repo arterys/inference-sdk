@@ -28,10 +28,10 @@ You will have to provide 2 endpoints:
 
 ### The healthcheck endpoint
 
-You should handle healthcheck requests by returning a status code 200 if your server is ready to handle inference requests
-and 500 otherwise.
+You should handle healthcheck requests by returning a string 'READY' if your server is ready. 
+Otherwise return something else, with status code 200 in both cases.
 
-You can do this by modifying the `healthcheck` function in `mock_server.py`
+You can do this by modifying the `healthcheck_handler` function in `mock_server.py`
 
 ### Handling an inference request
 

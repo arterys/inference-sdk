@@ -41,10 +41,10 @@ def get_empty_response():
     }
     return response_json, []
 
-def healthcheck():
+def healthcheck_handler():
     # Return if the model is ready to receive inference requests
 
-    return make_response('inference-service is up and accepting connections', 200)
+    return make_response('READY', 200)
 
 def get_bounding_box_2d_response(json_input, dicom_instances):
     dcm = pydicom.read_file(dicom_instances[0])
@@ -154,6 +154,6 @@ if __name__ == '__main__':
     app = Gateway(__name__)
     app.register_error_handler(Exception, handle_exception)
     app.add_inference_route('/', request_handler)
-    app.add_healthcheck_route(healthcheck)
+    app.add_healthcheck_route(healthcheck_handler)
 
     app.run(host='0.0.0.0', port=8000, debug=True, use_reloader=True)
