@@ -6,6 +6,7 @@ Inference model integration SDK
 ## Contents  <!-- omit in toc --> 
 
 - [Integrating the SDK](#integrating-the-sdk)
+  - [The healthcheck endpoint](#the-healthcheck-endpoint)
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
     - [Request JSON format](#request-json-format)
@@ -18,19 +19,31 @@ Inference model integration SDK
 
 ## Integrating the SDK
 
-You should use this SDK to allow the Arterys web app to invoke your model. These sections will help you do so.
+You should use this SDK to allow the Arterys web app to invoke your model. 
+The `gateway.py` is a helper class that creates a Flask server to communicate with the Arterys app via HTTP.
+You will have to provide 2 endpoints:
+
+* `GET /healthcheck`: to tell whether the server is ready to handle requests
+* `POST /`: to handle inference requests
+
+### The healthcheck endpoint
+
+You should handle healthcheck requests by returning a status code 200 if your server is ready to handle inference requests
+and 500 otherwise.
+
+You can do this by modifying the `healthcheck` function in `mock_server.py`
 
 ### Handling an inference request
 
-`gateway.py` is a helper class that establishes an HTTP endpoint for communication with the Arterys app. It accepts
-inference requests in the form of a multipart/related HTTP request. The parts in the multipart request are parsed into
+The Flask server defined in `gateway.py` accepts inference requests in the form of a multipart/related HTTP request. 
+The parts in the multipart request are parsed into
 a JSON object and an array of buffers containing contents of input DICOM files. They are in turn passed to a handler
 function that you can implement and register with the gateway class. The return values of the handler function are
 expected to be a JSON object and an array of buffers (the array could be empty). The gateway class will then package the
 returned values into a multipart/related HTTP response sent to the Arterys app.
 
 The following example establishes an inference service that listens on http://0.0.0.0:8000, it exposes an endpoint at
-'/' that accepts inference requests. It responses with a 5x5 bounding box annotation on the first DICOM instance in the
+'/' that accepts inference requests. It responds with a 5x5 bounding box annotation on the first DICOM instance in the
 list of dicom instances it receives.
 
 ```
