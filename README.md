@@ -28,8 +28,10 @@ You will have to provide 2 endpoints:
 
 ### The healthcheck endpoint
 
+The Arterys app relies on the result from this endpoint to decide whether or not the inference service is ready to field requests. 
 You should handle healthcheck requests by returning a string 'READY' if your server is ready. 
-Otherwise return something else, with status code 200 in both cases.
+Otherwise return something else, with status code 200 in both cases. 
+Returning "READY" too early will result in failures due to requests being sent too early.
 
 You can do this by modifying the `healthcheck_handler` function in `mock_server.py`
 
