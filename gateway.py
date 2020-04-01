@@ -71,7 +71,6 @@ class Gateway(Flask):
         """Instantiate the model Gateway to delegate to the given function."""
         super().__init__(*args, **kwargs)
         self.add_url_rule('/ping', 'ping', self._pong, methods=['GET', 'POST'])
-        self.add_url_rule('/healthcheck', 'healthcheck', self._pong, methods=['GET', 'POST'])
         self._serializer = InferenceSerializer()
         self._model_routes = {}
 
@@ -84,6 +83,11 @@ class Gateway(Flask):
 
         return make_response('inference-service is up and accepting connections', 200)
 
+    def add_healthcheck_route(self, handler_fn):
+        """ Add a handler for the healthcheck route """
+        
+        self.add_url_rule('/healthcheck', 'healthcheck', handler_fn, methods=['GET', 'POST'])
+        
     def add_inference_route(self, route, model_fn):
         """Add a callback function and unique route.
 
