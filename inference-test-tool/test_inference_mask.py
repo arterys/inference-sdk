@@ -3,15 +3,13 @@ This script lets you test if the inference outputs will be processed correctly b
 """
 
 import os
-import subprocess
 import argparse
 import random
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
-from pydicom.pixel_data_handlers.util import apply_color_lut, convert_color_space
-from utils import load_image_data, sort_images, create_folder
+from utils import load_image_data, sort_images, create_folder, get_pixels
 
 colors = [[1, 0, 0],
         [0, 1, 0],
@@ -56,7 +54,7 @@ def generate_images_with_masks(dicom_images, inference_results, output_folder):
     offset = 0
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
-        pixels = _get_pixels(dcm)
+        pixels = get_pixels(dcm)
         max_value = np.iinfo(pixels.dtype).max
 
         for mask_index, mask in enumerate(masks):
@@ -94,7 +92,7 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
     mask_alpha = 0.5
     for index, (image, mask) in enumerate(zip(images, masks)):
         dcm = pydicom.dcmread(image.path)
-        pixels = _get_pixels(dcm)
+        pixels = get_pixels(dcm)
         max_value = np.iinfo(pixels.dtype).max
 
         # get mask for this image
@@ -111,30 +109,6 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
         
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
         plt.imsave(output_filename, pixels)
-    
-def _get_pixels(dicom_file):
-    pixels = dicom_file.pixel_array
-    if dicom_file.PhotometricInterpretation == 'PALETTE COLOR':
-        pixels = apply_color_lut(pixels, dicom_file)
-    elif dicom_file.PhotometricInterpretation == 'YBR_FULL_422' or dicom_file.PhotometricInterpretation == 'YBR_FULL':
-        pixels = convert_color_space(pixels, dicom_file.PhotometricInterpretation, 'RGB')
-        dicom_file.PhotometricInterpretation = 'RGB'
-    elif len(pixels.shape) == 2 and (dicom_file.PhotometricInterpretation == 'MONOCHROME1' 
-        or dicom_file.PhotometricInterpretation == 'MONOCHROME2'):
-        pixels = np.stack((pixels, pixels, pixels), axis=2)
-
-    # handle different dtypes
-    if pixels.dtype == np.uint16:
-        pixels = (pixels * (256.0 / pixels.max())).astype(np.uint8)
-    elif pixels.dtype == np.int16:
-        pix_max = pixels.max()
-        pix_min = pixels.min()
-        pixels = ((pixels + pix_min) * (256.0 / (pix_max - pix_min))).astype(np.uint8)
-
-    return pixels
-
-def _decode(dicom_folder):
-    subprocess.check_call(['./decode_dcm.sh', dicom_folder])
 
 def parse_args():
     parser = argparse.ArgumentParser()

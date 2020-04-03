@@ -4,6 +4,7 @@ from functools import cmp_to_key
 from pathlib import Path
 import pydicom
 from pydicom.errors import InvalidDicomError
+from pydicom.pixel_data_handlers.util import apply_color_lut, convert_color_space
 import numpy as np
 import SimpleITK as sitk
 from PIL import Image
@@ -74,6 +75,27 @@ def sort_images(images):
 
     return sorted(images, key=cmp_to_key(lambda item1, item2: np.dot(np.subtract(np.array(item1.position), np.array(pos)), direction) -
         np.dot(np.subtract(np.array(item2.position), np.array(pos)), direction)))
+
+def get_pixels(dicom_file):
+    pixels = dicom_file.pixel_array
+    if dicom_file.PhotometricInterpretation == 'PALETTE COLOR':
+        pixels = apply_color_lut(pixels, dicom_file)
+    elif dicom_file.PhotometricInterpretation == 'YBR_FULL_422' or dicom_file.PhotometricInterpretation == 'YBR_FULL':
+        pixels = convert_color_space(pixels, dicom_file.PhotometricInterpretation, 'RGB')
+        dicom_file.PhotometricInterpretation = 'RGB'
+    elif len(pixels.shape) == 2 and (dicom_file.PhotometricInterpretation == 'MONOCHROME1' 
+        or dicom_file.PhotometricInterpretation == 'MONOCHROME2'):
+        pixels = np.stack((pixels, pixels, pixels), axis=2)
+
+    # handle different dtypes
+    if pixels.dtype == np.uint16:
+        pixels = (pixels * (256.0 / pixels.max())).astype(np.uint8)
+    elif pixels.dtype == np.int16:
+        pix_max = pixels.max()
+        pix_min = pixels.min()
+        pixels = ((pixels + pix_min) * (256.0 / (pix_max - pix_min))).astype(np.uint8)
+
+    return pixels
 
 def create_folder(folder):
     if not os.path.exists(folder):
