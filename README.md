@@ -260,12 +260,13 @@ If you don't specify any arguments, a usage message will be shown.
 The script accepts the following parameters:
 
 ```
-./send-inference-request.sh [-h] [-s] [--host HOST] [-p PORT] /path/to/dicom/files
+./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [-p PORT] /path/to/dicom/files
 ```
 
 Parameters:
 * `-h`: Print usage help
-* `-s`: Use it if model is a segmentation model. Otherwise bounding box output will be assumed
+* `-s`: Use it if model is a segmentation model
+* `-b`: Use it if model is a bounding box model 
 * `--host` and `--port`: host and port of inference server
 
 > PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool. 

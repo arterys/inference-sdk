@@ -27,20 +27,27 @@ import test_inference_boxes
 
 from utils import load_image_data, sort_images
 
-def upload_study_me(file_path, is_segmentation_model, host, port):
+SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
+BOUNDING_BOX = "BOUNDING_BOX"
+OTHER = "OTHER"
+
+def upload_study_me(file_path, model_type, host, port):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
     
     images = load_image_data(file_path)
     images = sort_images(images)
 
-    if not is_segmentation_model:
+    if model_type == BOUNDING_BOX:
         inference_command = 'get-bounding-box-2d'
-    elif images[0].position is None:
-        # No spatial information available. Perform 2D segmentation
-        inference_command = 'get-probability-mask-2D'
+    elif model_type == SEGMENTATION_MODEL:
+        if images[0].position is None:
+            # No spatial information available. Perform 2D segmentation
+            inference_command = 'get-probability-mask-2D'
+        else:
+            inference_command = 'get-probability-mask-3D'
     else:
-        inference_command = 'get-probability-mask-3D'
+        inference_command = 'other'
         
     request_json = {'request': 'post', 
                     'route': '/',
@@ -96,7 +103,7 @@ def upload_study_me(file_path, is_segmentation_model, host, port):
     masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
 
     output_folder = 'output'
-    if is_segmentation_model:
+    if model_type == SEGMENTATION_MODEL:
         if images[0].position is None:
             # We must sort the images by their instance UID based on the order of the response:
             identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
@@ -112,7 +119,7 @@ def upload_study_me(file_path, is_segmentation_model, host, port):
         print("Saving output masks to files 'output/output_masks_*.npy")
         for index, mask in enumerate(masks):
             mask.tofile('output/output_masks_{}.npy'.format(index + 1))
-    else:
+    elif model_type == BOUNDING_BOX:
         boxes = json_response['bounding_boxes_2d']
         test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
 
@@ -122,6 +129,8 @@ def parse_args():
     parser.add_argument("file_path", help="Path to dicom directory to upload.")
     parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask", 
         action='store_true')
+    parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes", 
+        action='store_true')
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     args = parser.parse_args()
@@ -130,4 +139,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    upload_study_me(args.file_path, args.segmentation_model, args.host, args.port)
+    model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
+    upload_study_me(args.file_path, model_type, args.host, args.port)
