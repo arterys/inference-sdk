@@ -260,7 +260,7 @@ If you don't specify any arguments, a usage message will be shown.
 The script accepts the following parameters:
 
 ```
-./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [-p PORT] /path/to/dicom/files
+./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [--port PORT] /path/to/dicom/files
 ```
 
 Parameters:
