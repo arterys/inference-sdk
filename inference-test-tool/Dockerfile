@@ -9,6 +9,9 @@ RUN cp /usr/lib/python3/dist-packages/gdcm.py /usr/local/lib/python3.7/site-pack
     && cp /usr/lib/python3/dist-packages/_gdcmswig*.so /usr/local/lib/python3.7/site-packages/ \
     && cp /usr/lib/x86_64-linux-gnu/libgdcm* /usr/local/lib/python3.7/site-packages/
 
+# Install fonts
+RUN apt-get install -y fonts-open-sans
+
 # Basic env setup
 WORKDIR /opt
 
