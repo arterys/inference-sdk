@@ -12,7 +12,6 @@ import hashlib
 
 import flask
 from flask import Flask, make_response
-from utils import request_auditor
 from utils import tagged_logger
 
 # pylint: disable=import-error
