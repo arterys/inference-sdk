@@ -200,7 +200,7 @@ This would need custom work from the Arterys support team.
 docker build -t arterys_inference_server .
 
 # Start the service.  
-docker run --gpus=all --rm -v $(pwd):/opt -p 8900:8000 arterys_inference_server -d <command>
+docker run --gpus=all --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
 
 # View the logs
 docker-compose logs -f
