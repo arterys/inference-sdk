@@ -213,6 +213,8 @@ For <command> pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` f
 
 > If you need GPU support for running your model then add `--gpus=all` to `docker run` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03
 
+For more information about supporting GPU acceleration inside docker containers please check the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) repository.
+
 ### Logging inside inference service
 
 To help with diagnosing problems with the inference service efficiently, it is recommend that logging be added to
