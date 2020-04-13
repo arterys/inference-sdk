@@ -200,7 +200,7 @@ This would need custom work from the Arterys support team.
 docker build -t arterys_inference_server .
 
 # Start the service.  
-docker run --gpus=all --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
+docker run --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
 
 # View the logs
 docker-compose logs -f
@@ -211,7 +211,7 @@ curl localhost:8900/healthcheck
 
 For <command> pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
 
-> If your Docker version is <19.03 then you will have to replace `--gpus=all` with `--runtime=nvidia`. Otherwise if your model does not require any GPU then you can remove the `gpus=all` flag.
+> If you need GPU support for running your model then add `--gpus=all` to `docker run` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03
 
 ### Logging inside inference service
 
