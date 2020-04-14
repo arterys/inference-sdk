@@ -16,6 +16,7 @@ Inference model integration SDK
 - [Testing the inference server](#testing-the-inference-server)
   - [To send an inference request to the mock inference server](#to-send-an-inference-request-to-the-mock-inference-server)
   - [Running Unit Tests](#running-unit-tests)
+- [Nifti image format support](#nifti-image-format-support)
 
 ## Integrating the SDK
 
@@ -187,23 +188,19 @@ detected for that image).
 
 
 #### Request JSON format
- The request will have a JSON part with this format:
 
- ```json
-    {
-        "inference_command": "string",           
-    }
- ```
-
-`inference_command` is only needed if your model can run different types of inference. In that case you can use it to
-decide whether to return bounding boxes, segmentation masks, etc.
-Possible values are: `get-bounding-box-2d` or `get-probability-mask`.
+Currently the request JSON will not have any meaningful information for you.
+However, Arterys could potentially send you important parameters if your model requires any.
+This would need custom work from the Arterys support team.
 
 ### Build and run the mock inference service container
 
 ```bash
-# Start the service
-docker-compose up -d
+# Build the docker image (run once)
+docker build -t arterys_inference_server .
+
+# Start the service.  
+docker run --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
 
 # View the logs
 docker-compose logs -f
@@ -211,6 +208,12 @@ docker-compose logs -f
 # Test the service
 curl localhost:8900/healthcheck
 ```
+
+For <command> pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
+
+> If you need GPU support for running your model then add `--gpus=all` to `docker run` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03
+
+For more information about supporting GPU acceleration inside docker containers please check the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) repository.
 
 ### Logging inside inference service
 
@@ -304,3 +307,9 @@ Run the following command in the root of this repo:
 ```bash
 python3 -m unittest
 ```
+
+## Nifti image format support
+
+In the `utils/image_conversion.py` there are a few functions that can be helpful if your model accepts Nifti files as input or generates Nifti output files.
+
+To convert Dicom files to Nifti use `convert_to_nifti`. If you want to load a segmenation mask from a Nifti file you can use `get_masks_from_nifti_file`.

@@ -4,18 +4,17 @@ Demo script that starts a server which exposes liver segmentation.
 Based off of https://github.com/morpheus-med/vision/blob/master/ml/experimental/research/prod/model_gateway/ucsd_server.py
 """
 
+import argparse
 import functools
+import json
 import logging
 import logging.config
 import os
 import tempfile
 import yaml
-import json
+
 import numpy
 import pydicom
-
-from utils.image_conversion import convert_to_nifti
-
 from utils import tagged_logger
 
 # ensure logging is configured before flask is initialized
@@ -128,32 +127,56 @@ def get_probability_mask_2D_response(json_input, dicom_instances):
     return response_json, masks
 
 
-def request_handler(json_input, dicom_instances, input_digest):
+def request_handler_bbox(json_input, dicom_instances, input_digest):
     """
     A mock inference model that returns a mask array of ones of size (height * depth, width)
     """
     transaction_logger = tagged_logger.TaggedLogger(logger)
     transaction_logger.add_tags({ 'input_hash': input_digest })
     transaction_logger.info('mock_model received json_input={}'.format(json_input))
+    return get_bounding_box_2d_response(json_input, dicom_instances)
 
-    # If your model accepts Nifti files as input then uncomment the following lines:
-    # convert_to_nifti(dicom_instances, 'nifti_output.nii')
-    # print("Converted file to nifti 'nifti_output.nii'")
+def request_handler_3D_segmentation(json_input, dicom_instances, input_digest):
+    """
+    A mock inference model that returns a mask array of ones of size (height * depth, width)
+    """
+    transaction_logger = tagged_logger.TaggedLogger(logger)
+    transaction_logger.add_tags({ 'input_hash': input_digest })
+    transaction_logger.info('mock_model received json_input={}'.format(json_input))
+    return get_probability_mask_3D_response(json_input, dicom_instances)
+
+def request_handler_2D_segmentation(json_input, dicom_instances, input_digest):
+    """
+    A mock inference model that returns a mask array of ones of size (height * depth, width)
+    """
+    transaction_logger = tagged_logger.TaggedLogger(logger)
+    transaction_logger.add_tags({ 'input_hash': input_digest })
+    transaction_logger.info('mock_model received json_input={}'.format(json_input))
+    return get_probability_mask_2D_response(json_input, dicom_instances)
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-s2D", "--segmentation_model_2D", default=False, help="If the model's output is a 2D segmentation mask", 
+        action='store_true')
+    group.add_argument("-s3D", "--segmentation_model_3D", default=False, help="If the model's output is a 3D segmentation mask", 
+        action='store_true')
+    group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes", 
+        action='store_true')
+    args = parser.parse_args()
     
-    if json_input['inference_command'] == 'get-bounding-box-2d':
-        return get_bounding_box_2d_response(json_input, dicom_instances)
-    elif json_input['inference_command'] == 'get-probability-mask-3D':
-        return get_probability_mask_3D_response(json_input, dicom_instances)
-    elif json_input['inference_command'] == 'get-probability-mask-2D':
-        return get_probability_mask_2D_response(json_input, dicom_instances)
-    else:
-        return get_empty_response()
-
+    return args
 
 if __name__ == '__main__':
+    args = parse_args()
     app = Gateway(__name__)
     app.register_error_handler(Exception, handle_exception)
-    app.add_inference_route('/', request_handler)
+    if args.bounding_box_model:
+        app.add_inference_route('/', request_handler_bbox)
+    elif args.segmentation_model_3D:
+        app.add_inference_route('/', request_handler_3D_segmentation)
+    else:
+        app.add_inference_route('/', request_handler_2D_segmentation)
+    
     app.add_healthcheck_route(healthcheck_handler)
-
     app.run(host='0.0.0.0', port=8000, debug=True, use_reloader=True)
