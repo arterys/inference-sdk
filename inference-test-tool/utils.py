@@ -29,13 +29,21 @@ def convert_image_to_dicom(image_file):
 
     # Load pixel array from image.
     img = Image.open(image_file)
-    pix = np.array(img)[:, :, 0]
+    if ('RGB' == img.mode) or ('RGBA' == img.mode):
+        # Assuming greyscale image, keep only one channel.
+        pix = np.array(img)[:, :, 0]
+    elif 'L' == img.mode:
+        # One black and white channel.
+        pix = np.array(img)[:, :]
+    else:
+        raise ValueError('Unhandled Image mode: {}'.format(img.mode))
 
     # Write pixel array to Dicom file.
     stk = sitk.GetImageFromArray(pix)
     writer = sitk.ImageFileWriter()
     writer.KeepOriginalImageUIDOn()
-    dicom_file = tempfile.NamedTemporaryFile().name + '.dcm'
+    img_basename = os.path.splitext(os.path.basename(image_file))[0] + '_'
+    dicom_file = tempfile.NamedTemporaryFile(prefix=img_basename).name + '.dcm'
     writer.SetFileName(dicom_file)
     writer.Execute(stk)
 
