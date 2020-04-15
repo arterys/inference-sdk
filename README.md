@@ -209,7 +209,7 @@ docker-compose logs -f
 curl localhost:8900/healthcheck
 ```
 
-For <command> pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
+For `<command>` pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
 
 > If you need GPU support for running your model then add `--gpus=all` to `docker run` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03
 
