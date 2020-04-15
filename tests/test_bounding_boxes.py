@@ -6,13 +6,17 @@ from .mock_server_test_case import MockServerTestCase
 class TestBoundingBox(MockServerTestCase):
     input_dir = 'test_box/'
     output_dir = 'test_box_out/'
+    command = '-b'
+    test_name = 'Bounding box test'
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests', self.input_dir))
         result = subprocess.run(['./send-inference-request.sh', '-b', '--host', '0.0.0.0', '-p',
-            '8900', '-o', self.output_dir, self.input_dir], cwd='inference-test-tool')
+            '8900', '-o', self.output_dir, self.input_dir], cwd='inference-test-tool',
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Test that the command executed successfully
+        self.check_success(result, command_name="Send inference request")
         self.assertEqual(result.returncode, 0)
 
         output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
@@ -41,3 +45,5 @@ class TestBoundingBox(MockServerTestCase):
             self.assertIsInstance(box['bottom_right'], list)
             self.assertEqual(2, len(box['top_left']))
             self.assertEqual(2, len(box['bottom_right']))
+
+        print("Bounding box test succeeded!!")
