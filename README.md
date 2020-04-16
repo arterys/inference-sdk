@@ -203,13 +203,13 @@ docker build -t arterys_inference_server .
 docker run --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
 
 # View the logs
-docker-compose logs -f
+docker logs -f <name of the container>
 
 # Test the service
 curl localhost:8900/healthcheck
 ```
 
-For <command> pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
+For `<command>` pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
 
 > If you need GPU support for running your model then add `--gpus=all` to `docker run` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03
 
