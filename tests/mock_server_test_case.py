@@ -37,7 +37,7 @@ class MockServerTestCase(unittest.TestCase):
             stderr=subprocess.PIPE, check=True)
 
         def cleanup():
-            print(term_colors.OKBLUE, "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
+            print(term_colors.OKBLUE + "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
             subprocess.run(["docker", "stop", self.test_container_name],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if os.path.exists(os.path.join(self.inference_test_dir, self.output_dir)):
@@ -63,5 +63,7 @@ class MockServerTestCase(unittest.TestCase):
 
     def check_success(self, result, command_name="Subprocess"):
         if result.returncode != 0:
-            print(term_colors.FAIL, command_name, "failed with error:", term_colors.ENDC)
-            print(result.stderr, term_colors.FAIL, "\nAnd output:\n", term_colors.ENDC, result.stdout)
+            print(term_colors.FAIL + command_name, "failed with stderr:", term_colors.ENDC)
+            print(result.stderr)
+            print(term_colors.FAIL + "And stdout:", term_colors.ENDC)
+            print(result.stdout)

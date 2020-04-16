@@ -55,4 +55,4 @@ class Test3DSegmentation(MockServerTestCase):
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
         self.assertEqual(count_masks, len(data['parts']))
 
-        print(term_colors.OKGREEN, "3D segmentation test succeeded!!", term_colors.ENDC)
+        print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)

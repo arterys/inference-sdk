@@ -47,4 +47,4 @@ class TestBoundingBox(MockServerTestCase):
             self.assertEqual(2, len(box['top_left']))
             self.assertEqual(2, len(box['bottom_right']))
 
-        print(term_colors.OKGREEN, "Bounding box test succeeded!!", term_colors.ENDC)
+        print(term_colors.OKGREEN + "Bounding box test succeeded!!", term_colors.ENDC)
