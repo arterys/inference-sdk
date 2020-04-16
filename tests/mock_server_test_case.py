@@ -46,11 +46,11 @@ class MockServerTestCase(unittest.TestCase):
                 shutil.rmtree(os.path.join(self.inference_test_dir, self.input_dir))
 
         self.addCleanup(cleanup)
-        copy_tree(os.path.join('tests', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))
+        copy_tree(os.path.join('tests/data', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))
         self.check_service_up(8900)
 
     def check_service_up(self, port, endpoint="/", params={}):
-        for i in range(5):
+        for i in range(30):
             try:
                 response = requests.get("http://localhost:{}/healthcheck".format(port))
             except requests.exceptions.ConnectionError:

@@ -308,6 +308,8 @@ Run the following command in the root of this repo:
 python3 -m unittest
 ```
 
+You must have Python 3.6+ installed.
+
 ## Nifti image format support
 
 In the `utils/image_conversion.py` there are a few functions that can be helpful if your model accepts Nifti files as input or generates Nifti output files.
