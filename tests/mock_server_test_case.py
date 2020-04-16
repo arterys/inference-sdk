@@ -22,7 +22,8 @@ class MockServerTestCase(unittest.TestCase):
         """
         super(MockServerTestCase, cls).setUpClass()
         try:
-            proc = subprocess.run(["docker", "build", "-t", "arterys_inference_server", "."], check=True)
+            print("Building test server docker image...")
+            proc = subprocess.run(["docker", "build", "-q", "-t", "arterys_inference_server", "."], check=True)
         except:
             print("Failed to build docker image for inference server")
             raise
@@ -30,13 +31,12 @@ class MockServerTestCase(unittest.TestCase):
 
     def setUp(self):
         print("Starting", self.test_name)
-        print("Starting inference server...")
-        proc = subprocess.run(["docker", "run", "--rm", "-v", "$(pwd):/opt", "-p", "8900:8000", "--name", 
+        proc = subprocess.run(["docker", "run", "--rm", "-v", os.getcwd() + ":/opt", "-p", "8900:8000", "--name",
             self.test_container_name, "-d", "arterys_inference_server", self.command], stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE, check=True)
 
         def cleanup():
-            print("Performing clean up. Stopping inference server...")
+            print("Performing clean up. Stopping inference server...\n")
             subprocess.run(["docker", "stop", self.test_container_name],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if os.path.exists(os.path.join(self.inference_test_dir, self.output_dir)):
@@ -59,8 +59,8 @@ class MockServerTestCase(unittest.TestCase):
             time.sleep(1)
         else:
             raise Exception("Service didn't start in time")
-    
-    def check_success(result, command_name="Subprocess"):
+
+    def check_success(self, result, command_name="Subprocess"):
         if result.returncode != 0:
             out, err = result.communicate()
             print(command_name, "failed with error:")
