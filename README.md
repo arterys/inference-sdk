@@ -203,7 +203,7 @@ docker build -t arterys_inference_server .
 docker run --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
 
 # View the logs
-docker-compose logs -f
+docker logs -f <name of the container>
 
 # Test the service
 curl localhost:8900/healthcheck
