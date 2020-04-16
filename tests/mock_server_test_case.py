@@ -62,6 +62,5 @@ class MockServerTestCase(unittest.TestCase):
 
     def check_success(self, result, command_name="Subprocess"):
         if result.returncode != 0:
-            out, err = result.communicate()
             print(command_name, "failed with error:")
-            print(err, "\nAnd output:\n", out)
+            print(result.stderr, "\nAnd output:\n", result.stdout)

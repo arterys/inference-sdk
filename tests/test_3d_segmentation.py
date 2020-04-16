@@ -13,7 +13,7 @@ class Test3DSegmentation(MockServerTestCase):
         input_files = os.listdir(os.path.join('tests', self.input_dir))
         result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
             '8900', '-o', self.output_dir, self.input_dir], cwd='inference-test-tool',
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")
