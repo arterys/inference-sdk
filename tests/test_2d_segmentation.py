@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 from .mock_server_test_case import MockServerTestCase
+from .utils import term_colors
 
 class Test2DSegmentation(MockServerTestCase):
     input_dir = 'test_2d/'
@@ -55,4 +56,4 @@ class Test2DSegmentation(MockServerTestCase):
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
         self.assertEqual(count_masks, len(data['parts']))
 
-        print("2D segmentation test succeeded!!")
+        print(term_colors.OKGREEN, "2D segmentation test succeeded!!", term_colors.ENDC)

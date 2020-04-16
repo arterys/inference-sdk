@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 from .mock_server_test_case import MockServerTestCase
+from .utils import term_colors
 
 class TestBoundingBox(MockServerTestCase):
     input_dir = 'test_box/'
@@ -46,4 +47,4 @@ class TestBoundingBox(MockServerTestCase):
             self.assertEqual(2, len(box['top_left']))
             self.assertEqual(2, len(box['bottom_right']))
 
-        print("Bounding box test succeeded!!")
+        print(term_colors.OKGREEN, "Bounding box test succeeded!!", term_colors.ENDC)

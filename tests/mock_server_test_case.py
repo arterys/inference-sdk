@@ -6,6 +6,7 @@ import time
 import unittest
 import shutil
 from distutils.dir_util import copy_tree
+from .utils import term_colors
 
 class MockServerTestCase(unittest.TestCase):    
     inference_test_dir = 'inference-test-tool'
@@ -36,7 +37,7 @@ class MockServerTestCase(unittest.TestCase):
             stderr=subprocess.PIPE, check=True)
 
         def cleanup():
-            print("Performing clean up. Stopping inference server...\n")
+            print(term_colors.OKBLUE, "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
             subprocess.run(["docker", "stop", self.test_container_name],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if os.path.exists(os.path.join(self.inference_test_dir, self.output_dir)):
@@ -62,5 +63,5 @@ class MockServerTestCase(unittest.TestCase):
 
     def check_success(self, result, command_name="Subprocess"):
         if result.returncode != 0:
-            print(command_name, "failed with error:")
-            print(result.stderr, "\nAnd output:\n", result.stdout)
+            print(term_colors.FAIL, command_name, "failed with error:", term_colors.ENDC)
+            print(result.stderr, term_colors.FAIL, "\nAnd output:\n", term_colors.ENDC, result.stdout)
