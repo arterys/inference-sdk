@@ -15,6 +15,7 @@ class MockServerTestCase(unittest.TestCase):
     command = ''
     test_name = ''
     test_container_name = "arterys_inference_server_tests"
+    server_proc = None
 
     @classmethod
     def setUpClass(cls):
@@ -32,18 +33,21 @@ class MockServerTestCase(unittest.TestCase):
 
     def setUp(self):
         print("Starting", self.test_name)
-        proc = subprocess.run(["docker", "run", "--rm", "-v", os.getcwd() + ":/opt", "-p", "8900:8000", "--name",
-            self.test_container_name, "-d", "arterys_inference_server", self.command], stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE, check=True)
+        self.server_proc = subprocess.Popen(["docker", "run", "--rm", "-v", os.getcwd() + ":/opt", "-p", "8900:8000", "--name",
+            self.test_container_name, "arterys_inference_server", self.command], stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, encoding='utf-8')
 
         def cleanup():
             print(term_colors.OKBLUE + "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
+
             subprocess.run(["docker", "stop", self.test_container_name],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if os.path.exists(os.path.join(self.inference_test_dir, self.output_dir)):
                 shutil.rmtree(os.path.join(self.inference_test_dir, self.output_dir))
             if os.path.exists(os.path.join(self.inference_test_dir, self.input_dir)):
                 shutil.rmtree(os.path.join(self.inference_test_dir, self.input_dir))
+            self.server_proc.terminate()
+            _, _ = self.server_proc.communicate()
 
         self.addCleanup(cleanup)
         copy_tree(os.path.join('tests/data', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))
@@ -67,3 +71,9 @@ class MockServerTestCase(unittest.TestCase):
             print(result.stderr)
             print(term_colors.FAIL + "And stdout:", term_colors.ENDC)
             print(result.stdout)
+            self.server_proc.terminate()
+            out, err = self.server_proc.communicate()
+            print(term_colors.FAIL + "Inference server stderr:", term_colors.ENDC)
+            print(err)
+            print(term_colors.FAIL + "Inference server stdout:", term_colors.ENDC)
+            print(out)
