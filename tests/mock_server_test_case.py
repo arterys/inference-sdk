@@ -25,7 +25,7 @@ class MockServerTestCase(unittest.TestCase):
         super(MockServerTestCase, cls).setUpClass()
         try:
             print("Building test server docker image...")
-            proc = subprocess.run(["docker", "build", "-q", "-t", "arterys_inference_server", "."], check=True)
+            # proc = subprocess.run(["docker", "build", "-q", "-t", "arterys_inference_server", "."], check=True)
         except:
             print("Failed to build docker image for inference server")
             raise
@@ -33,8 +33,7 @@ class MockServerTestCase(unittest.TestCase):
 
     def setUp(self):
         print("Starting", self.test_name)
-        self.server_proc = subprocess.Popen(["docker", "run", "--rm", "-v", os.getcwd() + ":/opt", "-p", "8900:8000", "--name",
-            self.test_container_name, "arterys_inference_server", self.command], stdout=subprocess.PIPE, 
+        self.server_proc = subprocess.Popen(["./start_server.sh", self.command], stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE, encoding='utf-8')
 
         def cleanup():
