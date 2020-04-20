@@ -209,9 +209,16 @@ curl localhost:8900/healthcheck
 
 For `<command>` pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
 
+If you want to pass additional flags to the `docker run` command which is run in `start_server.sh` then you can pass all of them behind the `command`.
+For example:
+
+```bash
+./start_server.sh -b -d --gpus=all
+```
+
 #### Adding GPU support
 
-If you need GPU support for running your model then you can modify the `start_server.sh` script. Add `--gpus=all` to the `docker run` command if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03.
+If you need GPU support for running your model then you can pass an argument to the `start_server.sh` script. Add `--gpus=all` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03.
 You must also have the nvidia-container-toolkit or nvidia-docker installed.
 
 For more information about supporting GPU acceleration inside docker containers please check the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) repository.
