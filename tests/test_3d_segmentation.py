@@ -1,6 +1,7 @@
 import os
 import json
 import subprocess
+import numpy as np
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors
 
@@ -54,5 +55,10 @@ class Test3DSegmentation(MockServerTestCase):
         output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
         self.assertEqual(count_masks, len(data['parts']))
+
+        for mask_index in range(count_masks):
+            shape = data['parts'][mask_index]['binary_data_shape']
+            mask = np.fromfile("output_masks_{}.npy".format(mask_index), dtype=np.uint8)
+            self.assertEqual(mask.shape[0], shape['depth'] * shape['width'] * shape['height'])
 
         print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)
