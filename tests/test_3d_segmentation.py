@@ -58,7 +58,7 @@ class Test3DSegmentation(MockServerTestCase):
 
         for mask_index in range(count_masks):
             shape = data['parts'][mask_index]['binary_data_shape']
-            mask = np.fromfile("output_masks_{}.npy".format(mask_index), dtype=np.uint8)
+            mask = np.fromfile(os.path.join(self.inference_test_dir, self.output_dir, "output_masks_{}.npy".format(mask_index + 1)), dtype=np.uint8)
             self.assertEqual(mask.shape[0], shape['depth'] * shape['width'] * shape['height'])
 
         print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)
