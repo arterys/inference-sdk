@@ -39,12 +39,15 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
     images = sort_images(images)
 
     if model_type == BOUNDING_BOX:
+        print("Performing bounding box prediction")
         inference_command = 'get-bounding-box-2d'
     elif model_type == SEGMENTATION_MODEL:
         if images[0].position is None:
             # No spatial information available. Perform 2D segmentation
+            print("Performing 2D mask segmentation")
             inference_command = 'get-probability-mask-2D'
         else:
+            print("Performing 3D mask segmentation")
             inference_command = 'get-probability-mask-3D'
     else:
         inference_command = 'other'
