@@ -53,14 +53,12 @@ class InferenceSerializer():
                 logger.error('No binary type for JSON part {}'.format(i))
             except StopIteration:
                 logger.error('Ran out of binary components for JSON part {}'.format(i))
-
-            if binary_type in {'png_image'}:
-                # Binary blob is assumed to be a file pointer or buffer type
-                # to be read directly into the response
-                yield ('application/png', binary_blob.read())
-            elif binary_type in {'boolean_mask', 'probability_mask'}:
+            
+            if binary_type in {'probability_mask'}:
                 # Binary blob is a numpy array of any shape
                 yield ('application/binary', binary_blob.tostring())
+            else:
+                raise NotImplementedError("Binary type {} is not supported".format(binary_type))
 
 
 class Gateway(Flask):

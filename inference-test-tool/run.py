@@ -53,15 +53,10 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
                     'route': '/',
                     'inference_command': inference_command}
 
-    width = 0
-    height = 0
     count = 0
     for image in images:
         try:
             dcm_file = pydicom.dcmread(image.path)
-            if width == 0 or height == 0:
-                width = dcm_file.Columns
-                height = dcm_file.Rows
             count += 1
             field = str(count)
             fo = open(image.path, 'rb').read()
@@ -71,10 +66,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
             print('File {} is not a DICOM file'.format(image.path))
             continue
     
-    print('Sending {} files...'.format(count))
-    request_json['depth'] = count
-    request_json['height'] = height
-    request_json['width'] = width
+    print('Sending {} files...'.format(len(images)))
 
     file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
     

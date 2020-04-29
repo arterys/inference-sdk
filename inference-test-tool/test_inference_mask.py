@@ -63,6 +63,9 @@ def generate_images_with_masks(dicom_images, inference_results, output_folder):
             offset += dcm.Rows * dcm.Columns
             
             pixels = np.reshape(pixels, (-1, 3))
+            assert image_mask.shape[0] == pixels.shape[0], \
+                f"The size of mask {mask_index} ({mask.shape}) does not match the size of the volume (slices x Rows x Columns)"
+
             # apply mask
             pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
                 (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
@@ -98,6 +101,8 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
         # get mask for this image
         image_mask = mask
         pixels = np.reshape(pixels, (-1, 3))
+        assert image_mask.shape[0] == pixels.shape[0], \
+            f"The size of mask {index} ({image_mask.shape[0]}) does not match the size of the image ({pixels.shape[0]})"
 
         # apply mask
         pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
