@@ -60,19 +60,26 @@ def generate_images_with_masks(dicom_images, inference_results, output_folder):
         for mask_index, mask in enumerate(masks):
             # get mask for this image
             image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
-            offset += dcm.Rows * dcm.Columns
             
             pixels = np.reshape(pixels, (-1, 3))
+            assert image_mask.shape[0] == pixels.shape[0], \
+                "The size of mask {} ({}) does not match the size of the volume (slices x Rows x Columns)".format(mask_index, mask.shape)
+
             # apply mask
             pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
                 (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
-            
+
+        offset += dcm.Rows * dcm.Columns
+
         # write image to output folder
         output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
-        
+
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
         plt.imsave(output_filename, pixels)
+
+    for mask_index, mask in enumerate(masks):
+        assert mask.shape[0] == offset, "Mask {} does not have the same size ({}) as the volume ({})".format(mask_index, mask.shape[0], offset)
 
 def generate_images_for_single_image_masks(dicom_images, inference_results, output_folder):
     """ This function will save images to disk to preview how a mask looks on the input images.
@@ -98,6 +105,8 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
         # get mask for this image
         image_mask = mask
         pixels = np.reshape(pixels, (-1, 3))
+        assert image_mask.shape[0] == pixels.shape[0], \
+            "The size of mask {} ({}) does not match the size of the image ({})".format(index, image_mask.shape[0], pixels.shape[0])
 
         # apply mask
         pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \

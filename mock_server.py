@@ -64,7 +64,9 @@ def get_bounding_box_2d_response(json_input, dicom_instances):
 def get_probability_mask_3D_response(json_input, dicom_instances):
     # Assuming that all files have the same size
     dcm = pydicom.read_file(dicom_instances[0])
-
+    depth = len(dicom_instances)
+    image_width = dcm.Columns
+    image_height = dcm.Rows
     response_json = {
         'protocol_version': '1.0',
         'parts': [
@@ -73,23 +75,23 @@ def get_probability_mask_3D_response(json_input, dicom_instances):
                 'binary_type': 'probability_mask',
                 'binary_data_shape': {
                     'timepoints': 1,
-                    'depth': len(dicom_instances),
-                    'width': dcm.Columns,
-                    'height': dcm.Rows
+                    'depth': depth,
+                    'width': image_width,
+                    'height': image_height
                 }
             }
         ]
     }
 
-    array_shape = (json_input['depth'], json_input['height'], json_input['width'])
-    
+    array_shape = (depth, image_height, image_width)
+
     # This code produces a mask that grows from the center of the image outwards as the image slices advance
     mask = numpy.zeros(array_shape, dtype=numpy.uint8)
-    mid_x = int(json_input['width'] / 2)
-    mid_y = int(json_input['height'] / 2)
-    for s in range(json_input['depth']):
-        offset_x = int(s / json_input['depth'] * mid_x)
-        offset_y = int(s / json_input['depth'] * mid_y)
+    mid_x = int(image_width / 2)
+    mid_y = int(image_height / 2)
+    for s in range(depth):
+        offset_x = int(s / depth * mid_x)
+        offset_y = int(s / depth * mid_y)
         indices = numpy.ogrid[mid_y - offset_y : mid_y + offset_y, mid_x - offset_x : mid_x + offset_x]
         mask[s][tuple(indices)] = 255
 
