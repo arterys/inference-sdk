@@ -11,6 +11,7 @@ Inference model integration SDK
     - [Standard model outputs](#standard-model-outputs)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
+    - [Adding GPU support](#adding-gpu-support)
   - [Logging inside inference service](#logging-inside-inference-service)
   - [Containerization](#containerization)
 - [Testing the inference server](#testing-the-inference-server)
@@ -196,11 +197,8 @@ This would need custom work from the Arterys support team.
 ### Build and run the mock inference service container
 
 ```bash
-# Build the docker image (run once)
-docker build -t arterys_inference_server .
-
-# Start the service.  
-docker run --rm -v $(pwd):/opt -p 8900:8000 -d arterys_inference_server <command>
+# Start the service.
+./start_server.sh <command>
 
 # View the logs
 docker logs -f <name of the container>
@@ -211,7 +209,17 @@ curl localhost:8900/healthcheck
 
 For `<command>` pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
 
-> If you need GPU support for running your model then add `--gpus=all` to `docker run` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03
+If you want to pass additional flags to the `docker run` command which is run in `start_server.sh` then you can pass all of them behind the `command`.
+For example:
+
+```bash
+./start_server.sh -b -d --gpus=all
+```
+
+#### Adding GPU support
+
+If you need GPU support for running your model then you can pass an argument to the `start_server.sh` script. Add `--gpus=all` if your Docker version is >=19.03 or `--runtime=nvidia` if it is <19.03.
+You must also have the nvidia-container-toolkit or nvidia-docker installed.
 
 For more information about supporting GPU acceleration inside docker containers please check the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) repository.
 
@@ -307,6 +315,8 @@ Run the following command in the root of this repo:
 ```bash
 python3 -m unittest
 ```
+
+You must have Python 3.6+ installed.
 
 ## Nifti image format support
 

@@ -68,7 +68,7 @@ def generate_images_with_masks(dicom_images, inference_results, output_folder):
                 (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
             
         # write image to output folder
-        output_filename = os.path.join(output_folder, str(index) + os.path.basename(os.path.normpath(image.path)))
+        output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
         
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
@@ -104,7 +104,7 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
             (mask_alpha * np.array(get_colors(0, max_value)).astype(np.float)).astype(np.uint8)
             
         # write image to output folder
-        output_filename = os.path.join(output_folder, str(index) + os.path.basename(os.path.normpath(image.path)))
+        output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
         
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
