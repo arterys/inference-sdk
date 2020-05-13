@@ -22,11 +22,12 @@ RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
     useradd -l -u ${USER_ID} -g inference-user inference-user &&\
     install -d -m 0755 -o inference-user -g inference-user /home/inference-user \
 ;fi
-        
-USER inference-user
 
 # Install requirements and module code
-COPY requirements.txt /opt/requirements.txt
+COPY --chown=inference-user:inference-user requirements.txt /opt/requirements.txt
+
+USER inference-user
+
 RUN python3 -m pip install -r /opt/requirements.txt
 
 ENTRYPOINT ["python3", "run.py"]
