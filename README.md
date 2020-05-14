@@ -18,6 +18,7 @@ Inference model integration SDK
   - [To send an inference request to the mock inference server](#to-send-an-inference-request-to-the-mock-inference-server)
   - [Running Unit Tests](#running-unit-tests)
 - [Nifti image format support](#nifti-image-format-support)
+- [Secondary capture support](#secondary-capture-support)
 
 ## Integrating the SDK
 
@@ -323,3 +324,19 @@ You must have Python 3.6+ installed.
 In the `utils/image_conversion.py` there are a few functions that can be helpful if your model accepts Nifti files as input or generates Nifti output files.
 
 To convert Dicom files to Nifti use `convert_to_nifti`. If you want to load a segmenation mask from a Nifti file you can use `get_masks_from_nifti_file`.
+
+## Secondary capture support
+
+If your model's output is a secondary capture DICOM file and you want to return that as result then you have to specify `"binary_type": "dicom_secondary_capture"` in the corresponding `parts` object. Your response could look like this:
+
+```json
+{
+  "protocol_version": "1.0",
+  "parts": [
+      {
+          "label": "Mock seg",
+          "binary_type": "dicom_secondary_capture"          
+      }
+  ]
+}
+```

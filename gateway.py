@@ -54,7 +54,11 @@ class InferenceSerializer():
             except StopIteration:
                 logger.error('Ran out of binary components for JSON part {}'.format(i))
             
-            if binary_type in {'probability_mask'}:
+            if binary_type in {'dicom_secondary_capture'}:
+                # Binary blob is assumed to be a file pointer or buffer type
+                # to be read directly into the response
+                yield ('application/dicom', binary_blob)
+            elif binary_type in {'probability_mask'}:
                 # Binary blob is a numpy array of any shape
                 yield ('application/binary', binary_blob.tostring())
             else:
