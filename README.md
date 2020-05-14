@@ -335,13 +335,7 @@ If your model's output is a secondary capture DICOM file and you want to return 
   "parts": [
       {
           "label": "Mock seg",
-          "binary_type": "dicom_secondary_capture",
-          "binary_data_shape": {
-              "timepoints": 1,
-              "depth": 256,
-              "width": 1024,
-              "height": 1024
-          }
+          "binary_type": "dicom_secondary_capture"          
       }
   ]
 }
