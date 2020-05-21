@@ -1,7 +1,8 @@
 import numpy as np
 import SimpleITK as sitk
-from pydicom import dcmread
-from pydicom.filebase import DicomBytesIO
+from pydicom import dcmread, dcmwrite
+from pydicom.filebase import DicomBytesIO, DicomFileLike
+from io import BytesIO
 
 ARTERYS_PROBABILITY_MASK='probability_mask'
 ARTERYS_BINARY='binary'
@@ -62,3 +63,32 @@ def get_masks_from_nifti_file(nifti_file, data_type=ARTERYS_PROBABILITY_MASK, nu
         return np.array(output)
     
     return [arr]
+
+
+def convert_monochrome_1to2(dcm):
+    """If the DICOM file `dcm` is in MONOCHROME1 then convert it to MONOCHROME2 """
+    if dcm.PhotometricInterpretation == 'MONOCHROME1':
+        pixels = dcm.pixel_array
+
+        # handle different dtypes
+        if pixels.dtype in [np.uint8, np.int8, np.uint16, np.int16]:
+            pixels = np.invert(pixels)            
+        else:
+            raise RuntimeError("Non integer image data types currently not supported.")
+        
+        # Update original DICOM file
+        dcm.PixelData = pixels.tobytes()
+        dcm.PhotometricInterpretation = 'MONOCHROME2'
+    
+    return dcm
+
+
+def convert_dataset_to_bytes(dataset):
+    """ Get a Bytes object from a DICOM dataset.
+        Adapted from https://pydicom.github.io/pydicom/dev/auto_examples/memory_dataset.html
+    """
+    with BytesIO() as buffer:
+        memory_dataset = DicomFileLike(buffer)
+        dcmwrite(memory_dataset, dataset)
+        memory_dataset.seek(0)
+        return memory_dataset.read()
