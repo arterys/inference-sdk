@@ -126,13 +126,12 @@ So the JSON you would return could look like this (where `bottom_right` is the s
 }
 ```
 
+##### Segmentation masks
 
-##### 3D Segmentation masks
-
-For a 3D segmentation producing model, the output is expected to be:
+For a segmentation producing model, the output is expected to be:
 
 * A single JSON object that describes all the segmentations produced
-* One or more binary files that contains each segmentation as a probability mask
+* One or more binary files that contains each segmentation mask
   
 A sample output of the JSON looks like this:
 
@@ -143,24 +142,63 @@ A sample output of the JSON looks like this:
              "binary_data_shape": {"timepoints":1,
                                    "depth":264,
                                    "width":512,
-                                   "height":512}
+                                   "height":512},
+             "SeriesInstanceUID": "1.1.1.1"
             }]
 }
 ```
 
+> The `SeriesInstanceUID` object allows identifying the series to which the result applies to.
+
 Note the “parts” array in the JSON above may contain specs for multiple segmentations. 
 In the example above, there’s only one segmentation labelled “Segmentation #1”. 
 For every element in the “parts” array, there should be a corresponding binary buffer. 
+
+> The above example is for masks that apply to 3D series. For 2D series you do not need to specify "depth" nor "timepoints"
+
+There are multiple possible interpretations for segmentation masks supported by the SDK, explained in the next subsections:
+
+* Probability mask
+* Heatmap for 3D Series
+* Heatmap for 2D Series (e.g. X-Rays)
+* Numeric label mask
+
+Depending on what the mask represents you must specify a different value for `binary_type`.
+
+The data format of the segmentation mask binary buffers should respect the following:
  
+* Each pixel value is expected to be uint8 (0 to 255), not a float. 
+* The order of the pixels is in column-row-slice, order. So if you start reading the binary file from the beginning, you should see the pixels in the following order: [(col0, row0, slice0), (col1, row0, slice0) ... (col0, row1, slice0), (col1, row1, slice0) ... (col0, row0, slice1), (col1, row0, slice1) ...].
+
+
+###### Probability mask for 3D Series
+
+To handle probability masks for 3D Series follow the steps for [segmentation masks](#segmentation-masks) 
+and use a `binary_type` of "probability_mask".
+
+A sample output of the JSON looks like this:
+
+```json
+{ "protocol_version":"1.0",
+  "parts": [{"label": "Segmentation #1",
+             "binary_type": "probability_mask",
+             "binary_data_shape": {"timepoints":1,
+                                   "depth":264,
+                                   "width":512,
+                                   "height":512},
+             "SeriesInstanceUID": "1.1.1.1"
+            }]
+}
+```
+
 The data format of the probability mask binary buffers is as follows:
  
 * Each pixel value is expected to be uint8 (0 to 255), not a float. 
   Value of 0 means a probability of 0, value of 255 means a probability of 1.0 (mapping is linear).
-* The order of the pixels is in column-row-slice, order. So if you start reading the binary file from the beginning, you should see the pixels in the following order: [(col0, row0, slice0), (col1, row0, slice0) ... (col0, row1, slice0), (col1, row1, slice0) ... (col0, row0, slice1), (col1, row0, slice1) ...].
 
-##### Heatmpas for 3D series
+###### Heatmaps for 3D series
 
-Handling heatmaps of 3D volumes works just the same as for [3D segmentation](#3d-segmentation-masks).
+To handle heatmaps of 3D volumes follow the steps for [segmentation masks](#segmentation-masks).
 The only difference is that the `binary_type` should be `'heatmap'`:
 
 ```json
@@ -170,15 +208,16 @@ The only difference is that the `binary_type` should be `'heatmap'`:
              "binary_data_shape": {"timepoints":1,
                                    "depth":264,
                                    "width":512,
-                                   "height":512}
+                                   "height":512},
+             "SeriesInstanceUID": "1.1.1.1"
             }]
 }
 ```
 
 ##### Heatmaps for 2D series (e.g. X-Rays)
 
-If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the previous sections
-still applies with some modifications.
+If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the 
+[segmentation masks](#segmentation-masks) section still applies with some modifications.
 
 First, your JSON response should look like this:
 
@@ -188,18 +227,13 @@ First, your JSON response should look like this:
              "binary_type": "heatmap",
              "binary_data_shape": {"width":512,
                                    "height":512},
-             "dicom_image": {
-                "SOPInstanceUID": "2.25.336451217722347364678629652826931415692",
-                "frame_number": 1,
-             }
+             "SeriesInstanceUID": "1.1.1.1",
+             "frame_number": 1             
             }]
 }
 ```
 
-> Note: There is no need to specify `depth` and `timepoints` in `binary_data_shape` but there is a `dicom_image`
-> object that allows identifying the image.
-
-> Also, `frame_number` is optional. Can be used for multi-frame instances.
+> `frame_number` is optional. Can be used for multi-frame instances.
 
 You should still return an array of binary buffers apart from the JSON.
 For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing 
@@ -208,7 +242,7 @@ detected for that image).
 ##### Numeric label mask for 3D series
 
 If your model creates segmentations for multiple classes/labels which do not overlap then you should follow the guide for 
-[3D segmentation masks](#3d-segmentation-masks) with the following changes:
+[segmentation masks](#segmentation-masks) with the following changes:
 
 * The `binary_type` should be `numeric_label_mask`
 * The pixel values should still be `uint8`, but the value won't be a probability but the index of the predicted label.
@@ -224,6 +258,7 @@ For example:
                                    "depth":264,
                                    "width":512,
                                    "height":512},
+             "SeriesInstanceUID": "1.1.1.1",
              "label_map": { "1": "Pneumonia",
                             "2": "Healthy",
                             "3": "Covid"}
