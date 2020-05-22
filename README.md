@@ -158,7 +158,7 @@ The data format of the probability mask binary buffers is as follows:
   Value of 0 means a probability of 0, value of 255 means a probability of 1.0 (mapping is linear).
 * The order of the pixels is in column-row-slice, order. So if you start reading the binary file from the beginning, you should see the pixels in the following order: [(col0, row0, slice0), (col1, row0, slice0) ... (col0, row1, slice0), (col1, row1, slice0) ... (col0, row0, slice1), (col1, row0, slice1) ...].
 
-##### 3D Heatmaps
+##### Heatmpas for 3D series
 
 Handling heatmaps of 3D volumes works just the same as for [3D segmentation](#3d-segmentation-masks).
 The only difference is that the `binary_type` should be `'heatmap'`:
@@ -175,7 +175,7 @@ The only difference is that the `binary_type` should be `'heatmap'`:
 }
 ```
 
-##### 2D Heatmaps
+##### Heatmaps for 2D series (e.g. X-Rays)
 
 If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the previous sections
 still applies with some modifications.
@@ -204,6 +204,34 @@ First, your JSON response should look like this:
 You should still return an array of binary buffers apart from the JSON.
 For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing 
 detected for that image).
+
+##### Numeric label mask for 3D series
+
+If your model creates segmentations for multiple classes/labels which do not overlap then you should follow the guide for 
+[3D segmentation masks](#3d-segmentation-masks) with the following changes:
+
+* The `binary_type` should be `numeric_label_mask`
+* The pixel values should still be `uint8`, but the value won't be a probability but the index of the predicted label.
+* You should add a key `label_map` with a dictionary which maps the label index to its name.
+
+For example:
+
+```json
+{ "protocol_version":"1.0",
+  "parts": [{"label": "Segmentation #1",
+             "binary_type": "numeric_label_mask",
+             "binary_data_shape": {"timepoints":1,
+                                   "depth":264,
+                                   "width":512,
+                                   "height":512},
+             "label_map": { "1": "Pneumonia",
+                            "2": "Healthy",
+                            "3": "Covid"}
+            }]
+}
+```
+
+
 
 #### Request JSON format
 
