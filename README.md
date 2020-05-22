@@ -158,9 +158,26 @@ The data format of the probability mask binary buffers is as follows:
   Value of 0 means a probability of 0, value of 255 means a probability of 1.0 (mapping is linear).
 * The order of the pixels is in column-row-slice, order. So if you start reading the binary file from the beginning, you should see the pixels in the following order: [(col0, row0, slice0), (col1, row0, slice0) ... (col0, row1, slice0), (col1, row1, slice0) ... (col0, row0, slice1), (col1, row0, slice1) ...].
 
-##### 2D Segmentation masks
+##### 3D Heatmaps
 
-If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the previous section
+Handling heatmaps of 3D volumes works just the same as for [3D segmentation](#3d-segmentation-masks).
+The only difference is that the `binary_type` should be `'heatmap'`:
+
+```json
+{ "protocol_version":"1.0",
+  "parts": [{"label": "Segmentation #1",
+             "binary_type": "heatmap",
+             "binary_data_shape": {"timepoints":1,
+                                   "depth":264,
+                                   "width":512,
+                                   "height":512}
+            }]
+}
+```
+
+##### 2D Heatmaps
+
+If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the previous sections
 still applies with some modifications.
 
 First, your JSON response should look like this:
@@ -168,7 +185,7 @@ First, your JSON response should look like this:
 ```json
 { "protocol_version":"1.0",
   "parts": [{"label": "Segmentation #1",
-             "binary_type": "probability_mask",
+             "binary_type": "heatmap",
              "binary_data_shape": {"width":512,
                                    "height":512},
              "dicom_image": {
@@ -187,7 +204,6 @@ First, your JSON response should look like this:
 You should still return an array of binary buffers apart from the JSON.
 For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing 
 detected for that image).
-
 
 #### Request JSON format
 
