@@ -174,7 +174,9 @@ The data format of the segmentation mask binary buffers should respect the follo
 ###### Probability mask for 3D Series
 
 To handle probability masks for 3D Series follow the steps for [segmentation masks](#segmentation-masks) 
-and use a `binary_type` of "probability_mask".
+and use a `binary_type` of "probability_mask". 
+
+Also, you can optionally add a "probability_threshold" specifying the threshold to show or hide the mask.
 
 A sample output of the JSON looks like this:
 
@@ -182,6 +184,7 @@ A sample output of the JSON looks like this:
 { "protocol_version":"1.0",
   "parts": [{"label": "Segmentation #1",
              "binary_type": "probability_mask",
+             "probability_threshold": 0.5,
              "binary_data_shape": {"timepoints":1,
                                    "depth":264,
                                    "width":512,
@@ -198,8 +201,9 @@ The data format of the probability mask binary buffers is as follows:
 
 ###### Heatmaps for 3D series
 
-To handle heatmaps of 3D volumes follow the steps for [segmentation masks](#segmentation-masks).
-The only difference is that the `binary_type` should be `'heatmap'`:
+To handle heatmaps of 3D volumes follow the steps for [segmentation masks](#segmentation-masks) with the `binary_type` set to `'heatmap'`.
+
+Optionally you can specify a color palette with 'palette':
 
 ```json
 { "protocol_version":"1.0",
@@ -209,7 +213,8 @@ The only difference is that the `binary_type` should be `'heatmap'`:
                                    "depth":264,
                                    "width":512,
                                    "height":512},
-             "SeriesInstanceUID": "1.1.1.1"
+             "SeriesInstanceUID": "1.1.1.1",
+             "palette": []
             }]
 }
 ```
@@ -217,9 +222,10 @@ The only difference is that the `binary_type` should be `'heatmap'`:
 ##### Heatmaps for 2D series (e.g. X-Rays)
 
 If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the 
-[segmentation masks](#segmentation-masks) section still applies with some modifications.
+[segmentation masks](#segmentation-masks) section and [Heatmaps for 3D Series](#heatmaps-for-3d-series) 
+still applies with some modifications.
 
-First, your JSON response should look like this:
+First, your JSON response should look like this, including `binary_type` = 'heatmap':
 
 ```json
 { "protocol_version":"1.0",
@@ -227,13 +233,19 @@ First, your JSON response should look like this:
              "binary_type": "heatmap",
              "binary_data_shape": {"width":512,
                                    "height":512},
-             "SeriesInstanceUID": "1.1.1.1",
-             "frame_number": 1             
+             "dicom_image": {
+                "SOPInstanceUID": "2.25.336451217722347364678629652826931415692",
+                "frame_number": 1,
+             },
+             "palette": []
             }]
 }
 ```
 
-> `frame_number` is optional. Can be used for multi-frame instances.
+> Note: There is no need to specify `depth` and `timepoints` in `binary_data_shape` but there is a `dicom_image`
+> object that allows identifying the image.
+
+> Also, `frame_number` is optional. Can be used for multi-frame instances.
 
 You should still return an array of binary buffers apart from the JSON.
 For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing 
