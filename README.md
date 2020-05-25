@@ -9,6 +9,9 @@ Inference model integration SDK
   - [The healthcheck endpoint](#the-healthcheck-endpoint)
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
+      - [Bounding box](#bounding-box)
+      - [Classification models](#classification-models)
+      - [Segmentation masks](#segmentation-masks)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
     - [Adding GPU support](#adding-gpu-support)
@@ -203,7 +206,7 @@ The data format of the probability mask binary buffers is as follows:
 
 To handle heatmaps of 3D volumes follow the steps for [segmentation masks](#segmentation-masks) with the `binary_type` set to `'heatmap'`.
 
-Optionally you can specify a color palette with 'palette':
+Optionally you can specify custom color palettes and assign them to specific parts:
 
 ```json
 { "protocol_version":"1.0",
@@ -214,12 +217,27 @@ Optionally you can specify a color palette with 'palette':
                                    "width":512,
                                    "height":512},
              "SeriesInstanceUID": "1.1.1.1",
-             "palette": []
-            }]
+             "palette": "my_super_palette"
+            }],
+  "palettes": {
+    "my_super_palette": {
+      "type": "anchorpoints",
+      "data": [
+        { "threshold": 0.0, "color": [0, 0, 0, 0] },
+        { "threshold": 1.0, "color": [255, 0, 0, 255] }
+      ]
+    },
+    "my_other_palette": {
+      "type": "lut",
+      "data": [ ...array of 1024 8-bit numbers]
+    }
+  }
 }
 ```
 
-##### Heatmaps for 2D series (e.g. X-Rays)
+The supported palette types are "anchorpoints" and "lut" as shown in the example above.
+
+###### Heatmaps for 2D series (e.g. X-Rays)
 
 If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the 
 [segmentation masks](#segmentation-masks) section and [Heatmaps for 3D Series](#heatmaps-for-3d-series) 
@@ -237,10 +255,15 @@ First, your JSON response should look like this, including `binary_type` = 'heat
                 "SOPInstanceUID": "2.25.336451217722347364678629652826931415692",
                 "frame_number": 1,
              },
-             "palette": []
-            }]
+             "palette": "my_super_palette"
+            }],
+  "palettes": { 
+    "my_super_palette": { ... } 
+  }
 }
 ```
+
+See [Heatmaps for 3D Series](#heatmaps-for-3d-series) for an example on how to specify `palettes`.
 
 > Note: There is no need to specify `depth` and `timepoints` in `binary_data_shape` but there is a `dicom_image`
 > object that allows identifying the image.
@@ -251,7 +274,7 @@ You should still return an array of binary buffers apart from the JSON.
 For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing 
 detected for that image).
 
-##### Numeric label mask for 3D series
+###### Numeric label mask for 3D series
 
 If your model creates segmentations for multiple classes/labels which do not overlap then you should follow the guide for 
 [segmentation masks](#segmentation-masks) with the following changes:
