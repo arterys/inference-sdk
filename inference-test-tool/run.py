@@ -138,7 +138,7 @@ def parse_args():
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
-    parser.add_argument('-a', '--attachments', nargs='+', help='One or more paths to files add as attachments to the request')
+    parser.add_argument('-a', '--attachments', nargs='+', default=[], help='One or more paths to files add as attachments to the request')
     args = parser.parse_args()
     
     return args
