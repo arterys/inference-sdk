@@ -130,7 +130,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("file_path", help="Path to dicom directory to upload.")
+    parser.add_argument("-f", "--file_path", help="Path to dicom directory to upload.")
     parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask", 
         action='store_true')
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes", 
@@ -146,4 +146,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
-    upload_study_me(args.file_path, model_type, args.host, args.port, args.output, args.attachment)
+    upload_study_me(args.file_path, model_type, args.host, args.port, args.output, args.attachments)
