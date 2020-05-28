@@ -31,7 +31,7 @@ SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
     
@@ -57,6 +57,13 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
                     'inference_command': inference_command}
 
     count = 0
+    for att in attachments:
+        count += 1
+        field = str(count)
+        fo = open(att, 'rb').read()
+        filename = os.path.basename(os.path.normpath(att))
+        file_dict.append((field, (filename, fo, 'application/octet-stream')))
+
     for image in images:
         try:
             dcm_file = pydicom.dcmread(image.path)
@@ -131,6 +138,7 @@ def parse_args():
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
+    parser.add_argument('-a', '--attachments', nargs='+', help='One or more paths to files add as attachments to the request')
     args = parser.parse_args()
     
     return args
@@ -138,4 +146,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
-    upload_study_me(args.file_path, model_type, args.host, args.port, args.output)
+    upload_study_me(args.file_path, model_type, args.host, args.port, args.output, args.attachment)
