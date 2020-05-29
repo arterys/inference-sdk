@@ -22,6 +22,7 @@ Inference model integration SDK
   - [Running Unit Tests](#running-unit-tests)
 - [Nifti image format support](#nifti-image-format-support)
 - [Secondary capture support](#secondary-capture-support)
+- [Sending attachments in the requests to the inference server](#sending-attachments-in-the-requests-to-the-inference-server)
 
 ## Integrating the SDK
 
@@ -453,4 +454,16 @@ If your model's output is a secondary capture DICOM file and you want to return 
       }
   ]
 }
+```
+
+## Sending attachments in the requests to the inference server
+
+If you need additional files to be sent with each request, such as a license file for example, then those files will be sent as multipart files.
+In the `mock_server.py` you will receive a JSON input and a list of files, as usual. 
+The list of files will include tha attachments at the front followed by the DICOM files to process.
+
+To test this with the test tool you can use the `-a` parameter to add any number of attachments like this:
+
+```bash
+./send-inference-request.sh -b --host 0.0.0.0 -p 8900 -f in/ -a some_attachment.txt other_attachment.bin
 ```
