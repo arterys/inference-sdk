@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
 from utils import load_image_data, sort_images, create_folder, get_pixels
+import cv2
 
 colors = [[1, 0, 0],
         [0, 1, 0],
@@ -24,6 +25,37 @@ def get_colors(index, max_value):
     else:
         rng = np.random.RandomState(index)
         return rng.randint(0, max_value, 3)
+
+def apply_lut(mask, colormap):
+    # colormap is an array of 1024 uint8
+    if colormap is None:
+        cmap = cv2.applyColorMap(mask, cv2.COLORMAP_JET)
+        cmap = np.reshape(cmap, (-1, 3))
+        return np.hstack((cmap, np.reshape(np.full(cmap.shape[0], 255, dtype=np.uint8), (-1, 1))))
+
+    lut = np.reshape(colormap, [-1, 4])
+    return np.dstack([cv2.LUT(mask, lut[:, i]) for i in range(4)])
+
+def create_lut_from_anchorpoints(anchorpoints):
+    assert anchorpoints[0]['threshold'] == 0.0, "The first anchorpoint must have a threshold of 0.0"
+    assert anchorpoints[-1]['threshold'] == 1.0, "The flast anchorpoint must have a threshold of 1.0"
+
+    lut = []
+    for c in range(4):
+        channel_arr = []
+        for p in range(len(anchorpoints) - 1):    
+            thr = (anchorpoints[p+1]['threshold'] - anchorpoints[p]['threshold']) * 256
+            
+            # Make sure we get 256 values and there is no rounding issue
+            if p == len(anchorpoints) - 2:                
+                thr = 256 - len(channel_arr)
+
+            values = np.linspace(anchorpoints[p]['color'][c], 
+                anchorpoints[p+1]['color'][c], int(thr), dtype=np.uint8)
+            channel_arr.extend(values)
+        lut.append(channel_arr)
+    lut = np.transpose(np.array(lut))    
+    return lut
 
 def _get_images_and_masks(dicom_images, inference_results):
     if isinstance(dicom_images, str):
@@ -73,8 +105,29 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
 
             if json_part['binary_type'] == 'probability_mask':
                 # apply mask
-                pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
+                threshold = (json_part['probability_threshold'] * 255) if 'probability_threshold' in json_part else 128
+                pixels[image_mask > threshold] = pixels[image_mask > threshold] * (1 - mask_alpha) + \
                     (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
+            elif json_part['binary_type'] == 'numeric_label_mask':
+                for n in range(max_value):
+                    pixels[image_mask == n] = pixels[image_mask == n] * (1 - mask_alpha) + \
+                        (mask_alpha * np.array(get_colors(n, max_value)).astype(np.float)).astype(np.uint8)
+            elif json_part['binary_type'] == 'heatmap':
+                if 'palette' in json_part and json_part['palette'] in response_json['palettes']:
+                    palette = response_json['palettes'][json_part['palette']]
+                    if palette['type'] == 'anchorpoints':                        
+                        lut = create_lut_from_anchorpoints(palette['data'])
+                        heatmap = apply_lut(image_mask, lut)
+                    else:
+                        heatmap = apply_lut(image_mask, palette['data'])
+                else:
+                    heatmap = apply_lut(image_mask, None)
+                heatmap = np.reshape(heatmap, [-1, 4])
+                pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))              
+                
+                pixels = (pixels * (1 - mask_alpha) + np.reshape(mask_alpha * (heatmap[:, 3] / 255.0), (-1, 1)) * heatmap).astype(np.uint8)
+                pixels[:, 3] = 255
+                
             else:
                 # TODO: Handle other binary mask types different from probability mask
                 pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
@@ -86,7 +139,9 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
         output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
 
-        pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
+        if pixels.shape[1] != 4:
+            pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
+        pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
         plt.imsave(output_filename, pixels)
 
     for mask_index, mask in enumerate(masks):
