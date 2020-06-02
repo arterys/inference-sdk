@@ -325,11 +325,15 @@ curl localhost:8900/healthcheck
 For `<command>` pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
 
 If you want to pass additional flags to the `docker run` command which is run in `start_server.sh` then you can pass all of them behind the `command`.
-For example:
+
+For example, to run the container in background, and add access to GPU:
 
 ```bash
 ./start_server.sh -b -d --gpus=all
 ```
+
+While developing it might also be handy to add a volume with the current directory to speed up the test cycle. 
+To do this add `-v $(pwd):/opt` at the end of the previous command
 
 #### Adding GPU support
 
