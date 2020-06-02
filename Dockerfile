@@ -10,5 +10,4 @@ COPY requirements.txt /opt/requirements.txt
 RUN python3.5 -m pip install -r /opt/requirements.txt
 COPY . /opt/
 
-EXPOSE 8900
 ENTRYPOINT [ "python3.5", "mock_server.py" ]

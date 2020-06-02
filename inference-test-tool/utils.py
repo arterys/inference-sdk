@@ -10,10 +10,12 @@ import SimpleITK as sitk
 from PIL import Image
 
 class DCM_Image:
-    def __init__(self, instanceUID, position, orientation, path):
-        self.instanceUID = instanceUID
-        self.position = position
-        self.orientation = orientation
+    def __init__(self, dcm, path):
+        self.instanceUID = dcm.SOPInstanceUID
+        self.position = dcm.ImagePositionPatient if 'ImagePositionPatient' in dcm else None
+        self.orientation = dcm.ImageOrientationPatient if 'ImageOrientationPatient' in dcm else None
+        self.instance_number = dcm.InstanceNumber if 'InstanceNumber' in dcm else None  
+        self.timepoint = None      
         self.path = path
 
     def direction(self):
@@ -68,7 +70,7 @@ def load_image_data(folder):
 
             position = dcm.ImagePositionPatient if 'ImagePositionPatient' in dcm else None
             orientation = dcm.ImageOrientationPatient if 'ImageOrientationPatient' in dcm else None
-            images.append(DCM_Image(dcm.SOPInstanceUID, position, orientation, file_path))
+            images.append(DCM_Image(dcm, file_path))
         elif os.path.isdir(file_path):
             images.extend(load_image_data(file_path))
     return images
@@ -81,8 +83,37 @@ def sort_images(images):
     if pos is None or direction is None:
         return images
 
-    return sorted(images, key=cmp_to_key(lambda item1, item2: np.dot(np.subtract(np.array(item1.position), np.array(pos)), direction) -
+    spatial_sorted = sorted(images, key=cmp_to_key(lambda item1, item2: np.dot(np.subtract(np.array(item1.position), np.array(pos)), direction) -
         np.dot(np.subtract(np.array(item2.position), np.array(pos)), direction)))
+    
+    timepoints = determine_timepoints(spatial_sorted)
+    if timepoints == 1:
+        return spatial_sorted
+
+    images_per_timepoint = int(len(images) / timepoints)
+    assert len(images) % timepoints == 0, "Series instances {} must be a multiple of timepoints {}" \
+        .format(len(images), timepoints)
+
+    for k in range(images_per_timepoint):
+        images[k * timepoints : (k+1) * timepoints] = sorted(images[k * timepoints : (k+1) * timepoints], 
+            key=cmp_to_key(lambda item1, item2: item1.instance_number < item2.instance_number))
+
+    result = []
+    for t in range(timepoints):
+        for i in range(images_per_timepoint):
+            image = images[i*timepoints+t]
+            image.timepoint = t
+            result.append(image)
+    return result
+
+def determine_timepoints(images):
+    # Supposing images are sorted by position
+    pos = images[0].position
+    end_index = 1
+    while end_index < len(images) and \
+        np.linalg.norm(np.subtract(np.array(images[end_index].position), np.array(pos))) < 1e-3:
+        end_index += 1
+    return end_index
 
 def get_pixels(dicom_file):
     pixels = dicom_file.pixel_array

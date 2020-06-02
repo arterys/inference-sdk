@@ -38,36 +38,47 @@ def _get_images_and_masks(dicom_images, inference_results):
         masks = inference_results
     return (images, masks)
 
-def generate_images_with_masks(dicom_images, inference_results, output_folder):
+def generate_images_with_masks(dicom_images, inference_results, response_json, output_folder):
     """ This function will save images to disk to preview how a mask looks on the input images.
         It saves one image for each input DICOM file. All masks in `inference_results` will be applied to the 
         whole 3D volume of DICOM images. Each mask will show in a different color.
         
         - dicom_images: Array of DCM_Image or path to a folder with images
         - inference_results: Array with mask buffers (one for each image), or path to folder with a numpy file containing one mask.
+        - response_json: The JSON response from the inference server
         - output_folder: Where the output images will be saved 
     """ 
     images, masks = _get_images_and_masks(dicom_images, inference_results)
     create_folder(output_folder)
-    
+  
     mask_alpha = 0.5
     offset = 0
+    last_timepoint = None
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
         max_value = np.iinfo(pixels.dtype).max
 
-        for mask_index, mask in enumerate(masks):
+        if image.timepoint is not None and last_timepoint != image.timepoint:            
+            # Reset offset when 
+            offset = 0
+            last_timepoint = image.timepoint
+
+        for mask_index, (mask, json_part) in enumerate(zip(masks, response_json["parts"])):            
             # get mask for this image
-            image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
-            
+            image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]            
             pixels = np.reshape(pixels, (-1, 3))
             assert image_mask.shape[0] == pixels.shape[0], \
                 "The size of mask {} ({}) does not match the size of the volume (slices x Rows x Columns)".format(mask_index, mask.shape)
 
-            # apply mask
-            pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
-                (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
+            if json_part['binary_type'] == 'probability_mask':
+                # apply mask
+                pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
+                    (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
+            else:
+                # TODO: Handle other binary mask types different from probability mask
+                pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
+                    (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
 
         offset += dcm.Rows * dcm.Columns
 
@@ -118,19 +129,3 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, outp
         
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
         plt.imsave(output_filename, pixels)
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--file_path", help="Path to dicom directory to test.")
-    parser.add_argument("-r", "--inference_results", help="Results of your inference model. Can be a path to a file or numpy array")
-    parser.add_argument("-o", "--output", help="Path to output folder where the tool will leave the generated images.")
-    args = parser.parse_args()
-
-    return args
-
-if __name__ == '__main__':
-    args = parse_args()
-    output_folder = 'output'
-    if args.output:
-        output_folder = args.output
-    generate_images_with_masks(args.file_path, args.inference_results, output_folder)

@@ -107,7 +107,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
                 filtered_images.append(image)
             test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, output_folder)
         else:
-            test_inference_mask.generate_images_with_masks(images, masks, output_folder)
+            test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
 
         print("Segmentation mask images generated in folder: {}".format(output_folder))
         print("Saving output masks to files '{}/output_masks_*.npy".format(output_folder))
