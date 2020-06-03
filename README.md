@@ -19,10 +19,10 @@ Inference model integration SDK
   - [Containerization](#containerization)
 - [Testing the inference server](#testing-the-inference-server)
   - [To send an inference request to the mock inference server](#to-send-an-inference-request-to-the-mock-inference-server)
+    - [Sending attachments in the requests to the inference server](#sending-attachments-in-the-requests-to-the-inference-server)
   - [Running Unit Tests](#running-unit-tests)
 - [Nifti image format support](#nifti-image-format-support)
 - [Secondary capture support](#secondary-capture-support)
-- [Sending attachments in the requests to the inference server](#sending-attachments-in-the-requests-to-the-inference-server)
 
 ## Integrating the SDK
 
@@ -402,7 +402,7 @@ If you don't specify any arguments, a usage message will be shown.
 The script accepts the following parameters:
 
 ```
-./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [--port PORT] /path/to/dicom/files
+./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [--port PORT] [-i /path/to/dicom/files] [-a attachment1 ... attachmentN]
 ```
 
 Parameters:
@@ -410,6 +410,8 @@ Parameters:
 * `-s`: Use it if model is a segmentation model
 * `-b`: Use it if model is a bounding box model 
 * `--host` and `--port`: host and port of inference server
+* `-i`: Input files
+* `-a`: Add attachments to the request. Arguments should be paths to files.
 
 > PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool. 
 You can check if the model's output will be correctly displayed on the Arterys web app.
@@ -419,11 +421,24 @@ folder, you may send this study to your segmentation model listening on port 890
 command in the `inference-test-tool` directory:
 
 ```bash
-./send-inference-request.sh -s --host 0.0.0.0 --port 8900 ./study-folder/
+./send-inference-request.sh -s --host 0.0.0.0 --port 8900 -i ./study-folder/
 ```
 
 For this to work, the folder where you have your DICOM files (`study-folder` in this case) must be a subfolder of 
 `inference-test-tool` so that they will be accessible inside the docker container.
+
+#### Sending attachments in the requests to the inference server
+
+If you need additional files to be sent with each request, such as a license file for example, then those files will be sent as multipart files.
+In the `mock_server.py` you will receive a JSON input and a list of files, as usual. 
+The list of files will include tha attachments at the front followed by the DICOM files to process.
+
+To test this with the test tool you can use the `-a` parameter to add any number of attachments like this:
+
+```bash
+./send-inference-request.sh -b --host 0.0.0.0 -p 8900 -i in/ -a some_attachment.txt other_attachment.bin
+```
+
 
 ### Running Unit Tests
 
@@ -454,16 +469,4 @@ If your model's output is a secondary capture DICOM file and you want to return 
       }
   ]
 }
-```
-
-## Sending attachments in the requests to the inference server
-
-If you need additional files to be sent with each request, such as a license file for example, then those files will be sent as multipart files.
-In the `mock_server.py` you will receive a JSON input and a list of files, as usual. 
-The list of files will include tha attachments at the front followed by the DICOM files to process.
-
-To test this with the test tool you can use the `-a` parameter to add any number of attachments like this:
-
-```bash
-./send-inference-request.sh -b --host 0.0.0.0 -p 8900 -f in/ -a some_attachment.txt other_attachment.bin
 ```
