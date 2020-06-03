@@ -31,7 +31,7 @@ SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
     
@@ -57,6 +57,13 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
                     'inference_command': inference_command}
 
     count = 0
+    for att in attachments:
+        count += 1
+        field = str(count)
+        fo = open(att, 'rb').read()
+        filename = os.path.basename(os.path.normpath(att))
+        file_dict.append((field, (filename, fo, 'application/octet-stream')))
+
     for image in images:
         try:
             dcm_file = pydicom.dcmread(image.path)
@@ -87,17 +94,18 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
 
     json_response = json.loads(multipart_data.parts[0].text)
     print("JSON response:", json_response)
-    mask_count = len(json_response["parts"])
-
-    # Assert that we get one binary part for each object in 'parts'
-    # The additional two multipart object are: JSON response and request:response digests
-    assert mask_count == len(multipart_data.parts) - 2, \
-        "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
-        .format(len(multipart_data.parts) - 2, mask_count)
-    
-    masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
 
     if model_type == SEGMENTATION_MODEL:
+        mask_count = len(json_response["parts"])
+
+        # Assert that we get one binary part for each object in 'parts'
+        # The additional two multipart object are: JSON response and request:response digests
+        assert mask_count == len(multipart_data.parts) - 2, \
+            "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
+            .format(len(multipart_data.parts) - 2, mask_count)
+        
+        masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
+
         if images[0].position is None:
             # We must sort the images by their instance UID based on the order of the response:
             identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
@@ -123,7 +131,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("file_path", help="Path to dicom directory to upload.")
+    parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
     parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask", 
         action='store_true')
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes", 
@@ -131,6 +139,7 @@ def parse_args():
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
+    parser.add_argument('-a', '--attachments', nargs='+', default=[], help='One or more paths to files add as attachments to the request')
     args = parser.parse_args()
     
     return args
@@ -138,4 +147,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
-    upload_study_me(args.file_path, model_type, args.host, args.port, args.output)
+    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments)
