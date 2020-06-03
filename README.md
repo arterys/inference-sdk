@@ -12,6 +12,8 @@ Inference model integration SDK
       - [Bounding box](#bounding-box)
       - [Classification models](#classification-models)
       - [Segmentation masks](#segmentation-masks)
+      - [Linear measurements](#linear-measurements)
+      - [Other information](#other-information)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
     - [Adding GPU support](#adding-gpu-support)
@@ -301,7 +303,50 @@ For example:
 }
 ```
 
+##### Linear measurements
 
+If your model outputs linear measurements you can send those results in this format:
+
+```jsonc
+{
+    "protocol_version": "1.0",
+    "parts": [{...}], // unchanged
+    "linear_measurements_2d": [
+        {
+            "SOPInstanceUID": "...",
+            "frame_number": 0, // optional for multi-frame instances
+            "label": "...",
+            "coordinates_type": "pixel", // valid values are "world" and "pixel"
+            "start": [x, y], // float values (can be integers for pixel coordinates).
+            "end": [x, y]
+        }
+    ]
+}
+```
+
+##### Other information
+
+If your model outputs any other information for the study or series of the input, which you want to include in the result, 
+then you can send this data under the `study_ml_json` or `series_ml_json` keys.
+Both these keys accept free formed JSON and its content will be shown as-is to the end users. 
+For *series*, add the additional information nested under the appropiate SeriesInstanceUID.
+
+For example:
+
+```jsonc
+{
+    "protocol_version": "1.0",
+    "parts": [{...}], // unchanged
+    "study_ml_json": {
+      "label1": "xxx", // free formed
+    },
+    "series_ml_json": {
+      "X.X.X.X": { // SeriesInstanceUID
+        "label1": "xxx", // free formed
+      }, 
+   }
+}
+```
 
 #### Request JSON format
 

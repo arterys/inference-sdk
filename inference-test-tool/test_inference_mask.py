@@ -53,16 +53,10 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
   
     mask_alpha = 0.5
     offset = 0
-    last_timepoint = None
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
         max_value = np.iinfo(pixels.dtype).max
-
-        if image.timepoint is not None and last_timepoint != image.timepoint:            
-            # Reset offset when 
-            offset = 0
-            last_timepoint = image.timepoint
 
         for mask_index, (mask, json_part) in enumerate(zip(masks, response_json["parts"])):            
             # get mask for this image
