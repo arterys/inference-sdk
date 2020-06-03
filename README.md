@@ -210,7 +210,7 @@ To handle heatmaps of 3D volumes follow the steps for [segmentation masks](#segm
 
 Optionally you can specify custom color palettes and assign them to specific parts:
 
-```json
+```jsonc
 { "protocol_version":"1.0",
   "parts": [{"label": "Segmentation #1",
              "binary_type": "heatmap",
@@ -231,7 +231,7 @@ Optionally you can specify custom color palettes and assign them to specific par
     },
     "my_other_palette": {
       "type": "lut",
-      "data": [ ...array of 1024 8-bit numbers]
+      "data": [ ... ] // array of 1024 8-bit numbers
     }
   }
 }
@@ -247,7 +247,7 @@ still applies with some modifications.
 
 First, your JSON response should look like this, including `binary_type` = 'heatmap':
 
-```json
+```jsonc
 { "protocol_version":"1.0",
   "parts": [{"label": "Segmentation #1",
              "binary_type": "heatmap",
