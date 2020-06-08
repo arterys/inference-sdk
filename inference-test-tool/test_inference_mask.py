@@ -109,7 +109,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                 pixels[image_mask > threshold] = pixels[image_mask > threshold] * (1 - mask_alpha) + \
                     (mask_alpha * np.array(get_colors(mask_index, max_value)).astype(np.float)).astype(np.uint8)
             elif json_part['binary_type'] == 'numeric_label_mask':
-                for n in range(max_value):
+                for n in range(1, max_value):
                     pixels[image_mask == n] = pixels[image_mask == n] * (1 - mask_alpha) + \
                         (mask_alpha * np.array(get_colors(n, max_value)).astype(np.float)).astype(np.uint8)
             elif json_part['binary_type'] == 'heatmap':
