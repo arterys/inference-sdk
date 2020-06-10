@@ -26,7 +26,7 @@ RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
 # Install requirements and module code
 COPY --chown=inference-user:inference-user requirements.txt /opt/requirements.txt
 
-# USER inference-user
+USER inference-user
 
 RUN python3 -m pip install -r /opt/requirements.txt
 
