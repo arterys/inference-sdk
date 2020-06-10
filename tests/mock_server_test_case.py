@@ -36,7 +36,7 @@ class MockServerTestCase(unittest.TestCase):
         self.check_service_up(8900)
 
     def check_service_up(self, port, endpoint="/", params={}):
-        for i in range(40):
+        for i in range(30):
             try:
                 response = requests.get("http://localhost:{}/healthcheck".format(port))
             except requests.exceptions.ConnectionError:
