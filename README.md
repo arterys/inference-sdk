@@ -1,7 +1,7 @@
 Arterys Inference SDK <!-- omit in toc --> 
 ===
 
-Inference model integration SDK
+The SDK helps you containerize your model into a Flask app with a predefined API to integrate it with the Arterys Marketplace.
 
 ## Contents  <!-- omit in toc --> 
 
@@ -28,6 +28,7 @@ Inference model integration SDK
 
 You should use this SDK to allow the Arterys web app to invoke your model. 
 The `gateway.py` is a helper class that creates a Flask server to communicate with the Arterys app via HTTP.
+
 You will have to provide 2 endpoints:
 
 * `GET /healthcheck`: to tell whether the server is ready to handle requests
