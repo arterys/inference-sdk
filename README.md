@@ -1,5 +1,6 @@
 Arterys Inference SDK <!-- omit in toc --> 
 ===
+![Run tests](https://github.com/arterys/inference-sdk/workflows/Run%20tests/badge.svg)
 
 The SDK helps you containerize your model into a Flask app with a predefined API to integrate it with the Arterys Marketplace.
 
