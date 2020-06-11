@@ -1,7 +1,8 @@
 """
-Demo script that starts a server which exposes liver segmentation.
+A mock server that uses gateway.py to establish a web server. Depending on the command line options provided,
+"-s2D", "-s3D" or "-b", the server is capable of returning either a sample 2D segmentation, 3D segmentation or
+bounding box correspondingly when an inference reuqest is sent to the "/" route.
 
-Based off of https://github.com/morpheus-med/vision/blob/master/ml/experimental/research/prod/model_gateway/ucsd_server.py
 """
 
 import argparse
@@ -159,14 +160,14 @@ def request_handler_2D_segmentation(json_input, dicom_instances, input_digest):
 def parse_args():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-s2D", "--segmentation_model_2D", default=False, help="If the model's output is a 2D segmentation mask", 
+    group.add_argument("-s2D", "--segmentation_model_2D", default=False, help="If the model's output is a 2D segmentation mask",
         action='store_true')
-    group.add_argument("-s3D", "--segmentation_model_3D", default=False, help="If the model's output is a 3D segmentation mask", 
+    group.add_argument("-s3D", "--segmentation_model_3D", default=False, help="If the model's output is a 3D segmentation mask",
         action='store_true')
-    group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes", 
+    group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
     args = parser.parse_args()
-    
+
     return args
 
 if __name__ == '__main__':
@@ -179,6 +180,6 @@ if __name__ == '__main__':
         app.add_inference_route('/', request_handler_3D_segmentation)
     else:
         app.add_inference_route('/', request_handler_2D_segmentation)
-    
+
     app.add_healthcheck_route(healthcheck_handler)
     app.run(host='0.0.0.0', port=8000, debug=True, use_reloader=True)

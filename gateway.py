@@ -1,7 +1,6 @@
 """
 Flask HTTP gateway module.
 
-Based off of https://github.com/morpheus-med/vision/blob/master/ml/experimental/research/prod/model_gateway/gateway.py
 """
 
 import functools
@@ -53,7 +52,7 @@ class InferenceSerializer():
                 logger.error('No binary type for JSON part {}'.format(i))
             except StopIteration:
                 logger.error('Ran out of binary components for JSON part {}'.format(i))
-            
+
             if binary_type in {'dicom_secondary_capture'}:
                 # Binary blob is assumed to be a file pointer or buffer type
                 # to be read directly into the response
@@ -86,9 +85,9 @@ class Gateway(Flask):
 
     def add_healthcheck_route(self, handler_fn):
         """ Add a handler for the healthcheck route """
-        
+
         self.add_url_rule('/healthcheck', 'healthcheck', handler_fn, methods=['GET', 'POST'])
-        
+
     def add_inference_route(self, route, model_fn):
         """Add a callback function and unique route.
 
