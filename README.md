@@ -1,7 +1,11 @@
 Arterys Inference SDK <!-- omit in toc --> 
 ===
 
-Inference model integration SDK
+This SDK can be used to integrate your model with the Arterys Marketplace.
+It provides a Flask app in a Docker container and does all the heavy lifting to make this process as easy as possible.
+
+You could integrate your model with the Marketplace without using the Flask app provided in this SDK,
+but you must follow the API as explained in [Integrating the SDK](#integrating-the-sdk)
 
 ## Contents  <!-- omit in toc --> 
 
