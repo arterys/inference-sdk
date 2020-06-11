@@ -21,6 +21,7 @@ Inference model integration SDK
   - [To send an inference request to the mock inference server](#to-send-an-inference-request-to-the-mock-inference-server)
     - [Sending attachments in the requests to the inference server](#sending-attachments-in-the-requests-to-the-inference-server)
   - [Running Unit Tests](#running-unit-tests)
+- [Handling different photometric interpretations of input files](#handling-different-photometric-interpretations-of-input-files)
 - [Nifti image format support](#nifti-image-format-support)
 - [Secondary capture support](#secondary-capture-support)
 
@@ -452,6 +453,25 @@ python3 -m unittest
 ```
 
 You must have Python 3.6+ installed.
+
+## Handling different photometric interpretations of input files
+
+DICOM files can have multiple photometric interpretations (RGB, YBR, grayscale, etc.).
+It is the responsibility of the model developer to handle all the possible interpretations supported for the input image types (CT, Xray, etc.).
+
+In `utils/image_conversion.py` there is a function that converts MONOCHROME1 (0 is white) image files to MONOCHROME2 (0 is black).
+You can use it like this:
+
+```python
+for dcm_file in dicom_instances:
+    dcm = pydicom.read_file(dcm_file)
+    dcm = convert_monochrome_1to2(dcm)
+
+    # If you need to convert the pydicom object back to a BytesIO object:
+    # dcm_bytes = convert_dataset_to_bytes(dcm)
+```
+
+Other conversions might be necessary and might be added in the future.
 
 ## Nifti image format support
 

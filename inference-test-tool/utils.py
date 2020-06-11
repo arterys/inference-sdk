@@ -116,6 +116,7 @@ def determine_timepoints(images):
     return end_index
 
 def get_pixels(dicom_file):
+    """ Gets RGB pixels from a DICOM file. If they were 16 bit ints then they will be converted to uint8. """
     pixels = dicom_file.pixel_array
     if dicom_file.PhotometricInterpretation == 'PALETTE COLOR':
         pixels = apply_color_lut(pixels, dicom_file)
