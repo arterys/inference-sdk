@@ -13,6 +13,8 @@ The SDK helps you containerize your model into a Flask app with a predefined API
       - [Bounding box](#bounding-box)
       - [Classification models](#classification-models)
       - [Segmentation masks](#segmentation-masks)
+      - [Linear measurements](#linear-measurements)
+      - [Other information](#other-information)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
     - [Adding GPU support](#adding-gpu-support)
@@ -211,7 +213,7 @@ To handle heatmaps of 3D volumes follow the steps for [segmentation masks](#segm
 
 Optionally you can specify custom color palettes and assign them to specific parts:
 
-```json
+```jsonc
 { "protocol_version":"1.0",
   "parts": [{"label": "Segmentation #1",
              "binary_type": "heatmap",
@@ -232,7 +234,7 @@ Optionally you can specify custom color palettes and assign them to specific par
     },
     "my_other_palette": {
       "type": "lut",
-      "data": [ ...array of 1024 8-bit numbers]
+      "data": [ ... ] // array of 1024 8-bit numbers
     }
   }
 }
@@ -248,7 +250,7 @@ still applies with some modifications.
 
 First, your JSON response should look like this, including `binary_type` = 'heatmap':
 
-```json
+```jsonc
 { "protocol_version":"1.0",
   "parts": [{"label": "Segmentation #1",
              "binary_type": "heatmap",
@@ -304,7 +306,50 @@ For example:
 }
 ```
 
+##### Linear measurements
 
+If your model outputs linear measurements you can send those results in this format:
+
+```jsonc
+{
+    "protocol_version": "1.0",
+    "parts": [{...}], // unchanged
+    "linear_measurements_2d": [
+        {
+            "SOPInstanceUID": "...",
+            "frame_number": 0, // optional for multi-frame instances
+            "label": "...",
+            "coordinates_type": "pixel", // valid values are "world" and "pixel"
+            "start": [x, y], // float values (can be integers for pixel coordinates).
+            "end": [x, y]
+        }
+    ]
+}
+```
+
+##### Other information
+
+If your model outputs any other information for the study or series of the input, which you want to include in the result, 
+then you can send this data under the `study_ml_json` or `series_ml_json` keys.
+Both these keys accept freeform JSON and its content will be shown as-is to the end users. 
+For *series*, add the additional information nested under the appropiate SeriesInstanceUID.
+
+For example:
+
+```jsonc
+{
+    "protocol_version": "1.0",
+    "parts": [{...}], // unchanged
+    "study_ml_json": {
+      "label1": "xxx", // free formed
+    },
+    "series_ml_json": {
+      "X.X.X.X": { // SeriesInstanceUID
+        "label1": "xxx", // freeform
+      }, 
+   }
+}
+```
 
 #### Request JSON format
 
