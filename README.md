@@ -328,7 +328,7 @@ If your model outputs linear measurements you can send those results in this for
 
 If your model outputs any other information for the study or series of the input, which you want to include in the result, 
 then you can send this data under the `study_ml_json` or `series_ml_json` keys.
-Both these keys accept free formed JSON and its content will be shown as-is to the end users. 
+Both these keys accept freeform JSON and its content will be shown as-is to the end users. 
 For *series*, add the additional information nested under the appropiate SeriesInstanceUID.
 
 For example:
@@ -342,7 +342,7 @@ For example:
     },
     "series_ml_json": {
       "X.X.X.X": { // SeriesInstanceUID
-        "label1": "xxx", // free formed
+        "label1": "xxx", // freeform
       }, 
    }
 }
