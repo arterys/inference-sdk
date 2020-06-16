@@ -1,9 +1,7 @@
 FROM python:3.7-slim
 
-RUN apt-get update
-
 # Install Python3-GDCM (dependency to read pixels of certain DICOM files)
-RUN apt-get install -y python3-gdcm
+RUN apt-get update && apt-get install -y python3-gdcm libglib2.0 libsm6 libxext6 libxrender-dev
 RUN cp /usr/lib/python3/dist-packages/gdcm.py /usr/local/lib/python3.7/site-packages/ \
     && cp /usr/lib/python3/dist-packages/gdcmswig.py /usr/local/lib/python3.7/site-packages/ \
     && cp /usr/lib/python3/dist-packages/_gdcmswig*.so /usr/local/lib/python3.7/site-packages/ \
