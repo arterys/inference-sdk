@@ -1,5 +1,6 @@
 import os
 import tempfile
+from operator import attrgetter
 from functools import cmp_to_key
 from pathlib import Path
 import pydicom
@@ -14,7 +15,7 @@ class DCM_Image:
         self.instanceUID = dcm.SOPInstanceUID
         self.position = dcm.ImagePositionPatient if 'ImagePositionPatient' in dcm else None
         self.orientation = dcm.ImageOrientationPatient if 'ImageOrientationPatient' in dcm else None
-        self.instance_number = dcm.InstanceNumber if 'InstanceNumber' in dcm else None  
+        self.instance_number = dcm.InstanceNumber if 'InstanceNumber' in dcm else None
         self.timepoint = None      
         self.path = path
 
@@ -77,7 +78,6 @@ def load_image_data(folder):
 def sort_images(images):
     pos = images[0].position
     direction = images[0].direction()
-
     if pos is None or direction is None:
         return images
 
@@ -88,18 +88,17 @@ def sort_images(images):
     if timepoints == 1:
         return spatial_sorted
 
-    images_per_timepoint = int(len(images) / timepoints)
-    assert len(images) % timepoints == 0, "Series instances {} must be a multiple of timepoints {}" \
-        .format(len(images), timepoints)
+    images_per_timepoint = int(len(spatial_sorted) / timepoints)    
+    assert len(spatial_sorted) % timepoints == 0, "Series instances {} must be a multiple of timepoints {}" \
+        .format(len(spatial_sorted), timepoints)
 
     for k in range(images_per_timepoint):
-        images[k * timepoints : (k+1) * timepoints] = sorted(images[k * timepoints : (k+1) * timepoints], 
-            key=cmp_to_key(lambda item1, item2: item1.instance_number < item2.instance_number))
+        spatial_sorted[k * timepoints : (k+1) * timepoints] = sorted(spatial_sorted[k * timepoints : (k+1) * timepoints], key=attrgetter('instance_number'))
 
     result = []
     for t in range(timepoints):
         for i in range(images_per_timepoint):
-            image = images[i*timepoints+t]
+            image = spatial_sorted[i*timepoints+t]
             image.timepoint = t
             result.append(image)
     return result
