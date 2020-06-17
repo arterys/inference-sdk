@@ -68,8 +68,6 @@ def load_image_data(folder):
                 file_path = convert_image_to_dicom(file_path)
                 dcm = pydicom.dcmread(file_path)
 
-            position = dcm.ImagePositionPatient if 'ImagePositionPatient' in dcm else None
-            orientation = dcm.ImageOrientationPatient if 'ImageOrientationPatient' in dcm else None
             images.append(DCM_Image(dcm, file_path))
         elif os.path.isdir(file_path):
             images.extend(load_image_data(file_path))

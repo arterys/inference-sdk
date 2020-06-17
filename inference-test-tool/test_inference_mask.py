@@ -21,10 +21,12 @@ colors = [[1, 0, 0],
 
 def get_colors(index, max_value):
     if index < len(colors):
-        return np.array(colors[index]) * max_value
+        arr = np.array(colors[index]) * max_value
     else:
         rng = np.random.RandomState(index)
-        return rng.randint(0, max_value, 3)
+        arr = rng.randint(0, max_value, 3)
+    
+    return np.append(arr, [max_value])
 
 def apply_lut(mask, colormap):
     # colormap is an array of 1024 uint8
@@ -84,17 +86,18 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     create_folder(output_folder)
 
     offset = 0
-    last_timepoint = None
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
 
-        if image.timepoint is not None and last_timepoint != image.timepoint:            
-            # Reset offset when 
-            offset = 0
-            last_timepoint = image.timepoint
+        # Reshape and add alpha
+        pixels = np.reshape(pixels, (-1, 3))
+        pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
 
-        for mask_index, (mask, json_part) in enumerate(zip(masks, response_json["parts"])):            
+        for mask_index, (mask, json_part) in enumerate(zip(masks, response_json["parts"])):
+            # If the input holds multiple timepoints but the result only includes 1 timepoint
+            if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
+                continue
             # get mask for this image
             image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]    
             pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)                    
@@ -111,7 +114,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
         plt.imsave(output_filename, pixels)
 
     for mask_index, mask in enumerate(masks):
-        assert mask.shape[0] == offset, "Mask {} does not have the same size ({}) as the volume ({})".format(mask_index, mask.shape[0], offset)
+        assert mask.shape[0] <= offset, "Mask {} does not have the same size ({}) as the volume ({})".format(mask_index, mask.shape[0], offset)
 
 def generate_images_for_single_image_masks(dicom_images, inference_results, response_json, output_folder):
     """ This function will save images to disk to preview how a mask looks on the input images.
@@ -133,6 +136,10 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
 
+        # Reshape and add alpha
+        pixels = np.reshape(pixels, (-1, 3))
+        pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
+        
         # get mask for this image        
         pixels = _draw_mask_on_image(pixels, mask, json_part, response_json, index, 0)
 
@@ -140,8 +147,6 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
         output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
         
-        if pixels.shape[1] != 4:
-            pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
         plt.imsave(output_filename, pixels)
 
@@ -149,7 +154,6 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
     mask_alpha = 0.5
     max_value = np.iinfo(pixels.dtype).max
 
-    pixels = np.reshape(pixels, (-1, 3))
     assert image_mask.shape[0] == pixels.shape[0], \
         "The size of mask {} ({}) does not match the size of the image ({})".format(mask_index, image_mask.shape[0], pixels.shape[0])
 
@@ -173,15 +177,12 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
         else:
             heatmap = apply_lut(image_mask, None)
         heatmap = np.reshape(heatmap, [-1, 4])
-        pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))              
         
         pixels = (pixels * (1 - mask_alpha) + np.reshape(mask_alpha * (heatmap[:, 3] / 255.0), (-1, 1)) * heatmap).astype(np.uint8)
         pixels[:, 3] = 255
-        
     else:
-        # TODO: Handle other mask types
-        pixels[image_mask > 128] = pixels[image_mask > 128] * (1 - mask_alpha) + \
-            (mask_alpha * np.array(get_colors(label, max_value)).astype(np.float)).astype(np.uint8)
+        # Ignoring others like 'dicom_secondary_capture'
+        pass
     
     return pixels
     
