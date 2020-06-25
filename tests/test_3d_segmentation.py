@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import numpy as np
+import SimpleITK as sitk
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors
 
@@ -41,9 +42,21 @@ class Test3DSegmentation(MockServerTestCase):
         self.assertIn('protocol_version', data)
         self.assertIn('parts', data)        
         
-        for part in data['parts']:
+        # Test if the amount of binary buffers is equals to the elements in `parts`
+        output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
+        output_files = os.listdir(output_folder_path)
+        count_masks = len([f for f in output_files if f.startswith("output_masks_")])
+        self.assertEqual(count_masks, len(data['parts']))
+
+        for index, part in enumerate(data['parts']):
             self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
+            self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask'],
+                "'binary_type' is not among the supported mask types")
+            if part['binary_type'] == 'dicom_secondary_capture':
+                # The rest of the test does not apply
+                continue
+
             self.assertIn('binary_data_shape', part)
             data_shape = part['binary_data_shape']
             self.assertIsInstance(data_shape['timepoints'], int)
@@ -51,14 +64,32 @@ class Test3DSegmentation(MockServerTestCase):
             self.assertIsInstance(data_shape['width'], int)
             self.assertIsInstance(data_shape['height'], int)
 
-        # Test if the amount of binary buffers is equals to the elements in `parts`
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
-        count_masks = len([f for f in output_files if f.startswith("output_masks_")])
-        self.assertEqual(count_masks, len(data['parts']))
+            # test that the mask shape is as advertised
+            mask = np.fromfile(os.path.join(self.inference_test_dir, self.output_dir, "output_masks_{}.npy".format(index + 1)), dtype=np.uint8)
+            self.assertEqual(mask.shape[0], data_shape['timepoints'] * data_shape['depth'] * data_shape['width'] * data_shape['height'])
 
-        for mask_index in range(count_masks):
-            shape = data['parts'][mask_index]['binary_data_shape']
-            mask = np.fromfile(os.path.join(self.inference_test_dir, self.output_dir, "output_masks_{}.npy".format(mask_index + 1)), dtype=np.uint8)
-            self.assertEqual(mask.shape[0], shape['depth'] * shape['width'] * shape['height'])
+            if part['binary_type'] == 'heatmap':
+                if 'palette' in part:
+                    palette_name = part['palette']
+                    self.assertIn('palettes', data)
+                    self.assertIn(palette_name, data['palettes'])
+                    palette = data['palettes'][palette_name]
+                    self.assertIn('type', palette)
+                    self.assertIn('data', palette)
+                    self.assertIsInstance(palette['data'], list, "'data' must be a list")
+                    if palette['type'] == 'lut':
+                        self.assertEqual(len(palette['data']), 1028, "LUT tables must have 1028 values (RGBA * 256)")
+                    elif palette['type'] == 'anchorpoints':                    
+                        self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")                        
+                        for ap in palette['data']:
+                            self.assertIn('threshold', ap, "Anchorpoint must include 'threshold'")
+                            self.assertIn('color', ap, "Anchorpoint must include 'color'")
+                            self.assertIsInstance(ap['color'], list, "'color' must be a list")
+                            self.assertEqual(len(ap['color']), 4, "color must have 4 elements (RGBA)")
+                            self.assertLessEqual(max(ap["color"]), 255, "Color values must be between 0 and 255")
+                        self.assertEqual(palette['data'][0]["threshold"], 0.0, "The first anchorpoint must start at 0.0")
+                        self.assertEqual(palette['data'][-1]["threshold"], 1.0, "The last anchorpoint must end at 1.0")
+            elif part['binary_type'] == 'numeric_label_mask':
+                self.assertIn('label_map', part)
 
         print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)

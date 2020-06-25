@@ -18,9 +18,18 @@ class MockServerTestCase(unittest.TestCase):
     server_proc = None
 
     def setUp(self):
-        print("Starting", self.test_name)
-        self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE, encoding='utf-8')
+        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
+        if should_start_server:
+            print("Starting", self.test_name)
+            self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, encoding='utf-8')
+        else:
+            print("Assuming the server is already running.")
+
+        override_input_folder = os.getenv('ARTERYS_OVERRIDE_TEST_INPUT_FOLDER', "")
+        if override_input_folder != "":
+            print("Overriding input fodler with", override_input_folder)
+            self.input_dir = override_input_folder
 
         def cleanup():
             print(term_colors.OKBLUE + "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
@@ -48,15 +57,16 @@ class MockServerTestCase(unittest.TestCase):
             raise Exception("Service didn't start in time")
 
     def stop_service(self, print_output=False):
-        subprocess.run(["docker", "stop", self.test_container_name],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.server_proc.terminate()
-        out, err = self.server_proc.communicate()
-        if print_output:
-            print(term_colors.FAIL + "Inference server stderr:", term_colors.ENDC)
-            print(err)
-            print(term_colors.FAIL + "Inference server stdout:", term_colors.ENDC)
-            print(out)
+        if self.server_proc is not None:
+            subprocess.run(["docker", "stop", self.test_container_name],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.server_proc.terminate()
+            out, err = self.server_proc.communicate()
+            if print_output:
+                print(term_colors.FAIL + "Inference server stderr:", term_colors.ENDC)
+                print(err)
+                print(term_colors.FAIL + "Inference server stdout:", term_colors.ENDC)
+                print(out)
 
     def check_success(self, result, command_name="Subprocess"):
         if result.returncode != 0:
