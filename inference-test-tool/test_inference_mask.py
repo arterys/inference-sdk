@@ -5,7 +5,7 @@ This script lets you test if the inference outputs will be processed correctly b
 import os
 import argparse
 import random
-
+from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
@@ -85,6 +85,20 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     images, masks = _get_images_and_masks(dicom_images, inference_results)
     create_folder(output_folder)
 
+    # Filter out secondary capture outputs
+    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] != 'dicom_secondary_capture']
+    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] == 'dicom_secondary_capture']
+    masks = np.array(masks)
+    secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)
+    secondary_captures = masks[secondary_capture_indexes_bool]
+    non_sc_masks = masks[~secondary_capture_indexes_bool]
+
+    # Create DICOM files for secondary capture outputs
+    for index, sc in enumerate(secondary_captures):
+        dcm = pydicom.read_file(BytesIO(sc.tobytes()))
+        file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
+        pydicom.dcmwrite(file_path, dcm)
+
     offset = 0
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
@@ -94,7 +108,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
         pixels = np.reshape(pixels, (-1, 3))
         pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
 
-        for mask_index, (mask, json_part) in enumerate(zip(masks, response_json["parts"])):
+        for mask_index, (mask, json_part) in enumerate(zip(non_sc_masks, all_mask_parts)):
             # If the input holds multiple timepoints but the result only includes 1 timepoint
             if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
                 continue
@@ -113,7 +127,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
         plt.imsave(output_filename, pixels)
 
-    for mask_index, mask in enumerate(masks):
+    for mask_index, mask in enumerate(non_sc_masks):
         assert mask.shape[0] <= offset, "Mask {} does not have the same size ({}) as the volume ({})".format(mask_index, mask.shape[0], offset)
 
 def generate_images_for_single_image_masks(dicom_images, inference_results, response_json, output_folder):

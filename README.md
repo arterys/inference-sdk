@@ -500,6 +500,20 @@ python3 -m unittest
 
 You must have Python 3.6+ installed.
 
+Currently most tests are actually integration tests.
+There is one test for each: 3D series segmentation, 2D series segmentation and bounding box detection.
+
+If you want to run only one of them, run:
+
+```bash
+python3 -m unittest tests/<name_of_file>
+```
+The tests will start the inference server using the `start_server.sh` script. 
+The server must be stopped before running the tests.
+If you want to start the inference server differently then start it before running the tests and define the env variable 'ARTERYS_SDK_ASSUME_SERVER_STARTED=true'.
+
+If you want to use a custom test study then save it in a folder under `tests/data` and define the env var 'ARTERYS_OVERRIDE_TEST_INPUT_FOLDER=<folder_name>'.
+
 ## Nifti image format support
 
 In the `utils/image_conversion.py` there are a few functions that can be helpful if your model accepts Nifti files as input or generates Nifti output files.

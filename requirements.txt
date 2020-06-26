@@ -1,7 +1,7 @@
-boto3
-flask
-numpy
-pydicom
-pyyaml
-requests-toolbelt
-SimpleITK
+boto3==1.12.48
+flask==1.1.2
+numpy==1.18.3
+pydicom==1.4.2
+pyyaml==5.3.1
+requests-toolbelt==0.9.1
+SimpleITK==1.2.4
