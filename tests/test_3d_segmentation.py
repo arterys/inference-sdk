@@ -2,7 +2,6 @@ import os
 import json
 import subprocess
 import numpy as np
-import SimpleITK as sitk
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors
 
