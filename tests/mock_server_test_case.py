@@ -28,7 +28,7 @@ class MockServerTestCase(unittest.TestCase):
 
         override_input_folder = os.getenv('ARTERYS_OVERRIDE_TEST_INPUT_FOLDER', "")
         if override_input_folder != "":
-            print("Overriding input fodler with", override_input_folder)
+            print("Overriding input folder with", override_input_folder)
             self.input_dir = override_input_folder
 
         def cleanup():
