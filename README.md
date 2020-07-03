@@ -429,13 +429,26 @@ The input_hash is calculated by gateway.py for every transaction, and it is pass
 ### Containerization
 
 The default Dockerfile in this repository has the following characteristics:
-- It uses Ubuntu 16.04 as the base image
+- It uses `arterys/inference-sdk-base` as the base image
 - It exercises pip install to install Python dependencies listed in the requirements.txt file
 - It runs mock_server.py on container startup by virtual of the ENTRYPOINT attribute
 
 Developers should modify the Dockerfile to build the software stack that is required to run their models.
 
-There is a separate Dockerfile in the `inference-test-tool` folder which is used to test the model published on the root docker container.
+While it is not necessary, we recommend using `arterys/inference-sdk-base` as base image repository for your Dockerfile. 
+There are several tags you can choose from depending on your need of GPU support or not.
+All these images will have the basic dependencies that you need as well as a validated CUDA set up if you need it.
+
+You can choose from the following tags (where `<version_number>` is the version of the docker image):
+
+* <version_number>-cpu
+* <version_number>-cuda-9.2
+* <version_number>-cuda-10.0
+* <version_number>-cuda-10.1
+* <version_number>-cuda-10.2
+
+Check the [arterys/inference-sdk-base](https://hub.docker.com/r/arterys/inference-sdk-base) repository on DockerHub for the latest published version. 
+You can also find more information on the [inference-sdk-images](https://github.com/arterys/inference-sdk-images) GitHub repo.
 
 ## Testing the inference server
 
