@@ -1,4 +1,4 @@
-FROM arterys/inference-sdk-base:0.1-cpu
+FROM arterys/inference-sdk-base:1.0-cpu
 
 # Install requirements and module code
 COPY requirements.txt /opt/requirements.txt
