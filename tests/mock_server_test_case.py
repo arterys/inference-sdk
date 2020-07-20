@@ -75,3 +75,30 @@ class MockServerTestCase(unittest.TestCase):
             print(term_colors.FAIL + "And stdout:", term_colors.ENDC)
             print(result.stdout)
             self.stop_service(True)
+
+    def validate_heatmap_palettes(self, part, response):
+        """ Validates that the heatmap 'part' contains a valid palette
+            
+            part: dict with contents of a response 'part'
+            response: dict with the whole JSON response from inference server 
+        """
+        if 'palette' in part:
+            palette_name = part['palette']
+            self.assertIn('palettes', response)
+            self.assertIn(palette_name, response['palettes'])
+            palette = response['palettes'][palette_name]
+            self.assertIn('type', palette)
+            self.assertIn('data', palette)
+            self.assertIsInstance(palette['data'], list, "'data' must be a list")
+            if palette['type'] == 'lut':
+                self.assertEqual(len(palette['data']), 1028, "LUT tables must have 1028 values (RGBA * 256)")
+            elif palette['type'] == 'anchorpoints':                    
+                self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")                        
+                for ap in palette['data']:
+                    self.assertIn('threshold', ap, "Anchorpoint must include 'threshold'")
+                    self.assertIn('color', ap, "Anchorpoint must include 'color'")
+                    self.assertIsInstance(ap['color'], list, "'color' must be a list")
+                    self.assertEqual(len(ap['color']), 4, "color must have 4 elements (RGBA)")
+                    self.assertLessEqual(max(ap["color"]), 255, "Color values must be between 0 and 255")
+                self.assertEqual(palette['data'][0]["threshold"], 0.0, "The first anchorpoint must start at 0.0")
+                self.assertEqual(palette['data'][-1]["threshold"], 1.0, "The last anchorpoint must end at 1.0")
