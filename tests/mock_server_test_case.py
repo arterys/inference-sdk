@@ -16,14 +16,16 @@ class MockServerTestCase(unittest.TestCase):
     test_name = ''
     test_container_name = "arterys_inference_server_tests"
     server_proc = None
+    inference_port = '8900'
 
     def setUp(self):
-        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
+        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)        
         if should_start_server:
             print("Starting", self.test_name)
             self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, encoding='utf-8')
         else:
+            self.inference_port = os.getenv('ARTERYS_SDK_INFERENCE_SERVER_PORT', '8900')            
             print("Assuming the server is already running.")
 
         override_input_folder = os.getenv('ARTERYS_OVERRIDE_TEST_INPUT_FOLDER', "")
@@ -42,7 +44,7 @@ class MockServerTestCase(unittest.TestCase):
 
         self.addCleanup(cleanup)
         copy_tree(os.path.join('tests/data', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))
-        self.check_service_up(8900)
+        self.check_service_up(self.inference_port)
 
     def check_service_up(self, port, endpoint="/", params={}):
         for i in range(30):
@@ -54,6 +56,7 @@ class MockServerTestCase(unittest.TestCase):
                 return response
             time.sleep(1)
         else:
+            self.stop_service(True)
             raise Exception("Service didn't start in time")
 
     def stop_service(self, print_output=False):
@@ -62,6 +65,7 @@ class MockServerTestCase(unittest.TestCase):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.server_proc.terminate()
             out, err = self.server_proc.communicate()
+            self.server_proc = None
             if print_output:
                 print(term_colors.FAIL + "Inference server stderr:", term_colors.ENDC)
                 print(err)
