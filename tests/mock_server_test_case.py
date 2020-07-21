@@ -16,14 +16,16 @@ class MockServerTestCase(unittest.TestCase):
     test_name = ''
     test_container_name = "arterys_inference_server_tests"
     server_proc = None
+    inference_port = '8900'
 
     def setUp(self):
-        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
+        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)        
         if should_start_server:
             print("Starting", self.test_name)
             self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, encoding='utf-8')
         else:
+            self.inference_port = os.getenv('ARTERYS_SDK_INFERENCE_SERVER_PORT', '8900')            
             print("Assuming the server is already running.")
 
         override_input_folder = os.getenv('ARTERYS_OVERRIDE_TEST_INPUT_FOLDER', "")
@@ -42,7 +44,7 @@ class MockServerTestCase(unittest.TestCase):
 
         self.addCleanup(cleanup)
         copy_tree(os.path.join('tests/data', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))
-        self.check_service_up(8900)
+        self.check_service_up(self.inference_port)
 
     def check_service_up(self, port, endpoint="/", params={}):
         for i in range(30):
@@ -54,6 +56,7 @@ class MockServerTestCase(unittest.TestCase):
                 return response
             time.sleep(1)
         else:
+            self.stop_service(True)
             raise Exception("Service didn't start in time")
 
     def stop_service(self, print_output=False):
@@ -62,6 +65,7 @@ class MockServerTestCase(unittest.TestCase):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.server_proc.terminate()
             out, err = self.server_proc.communicate()
+            self.server_proc = None
             if print_output:
                 print(term_colors.FAIL + "Inference server stderr:", term_colors.ENDC)
                 print(err)
@@ -75,3 +79,30 @@ class MockServerTestCase(unittest.TestCase):
             print(term_colors.FAIL + "And stdout:", term_colors.ENDC)
             print(result.stdout)
             self.stop_service(True)
+
+    def validate_heatmap_palettes(self, part, response):
+        """ Validates that the heatmap 'part' contains a valid palette
+            
+            part: dict with contents of a response 'part'
+            response: dict with the whole JSON response from inference server 
+        """
+        if 'palette' in part:
+            palette_name = part['palette']
+            self.assertIn('palettes', response)
+            self.assertIn(palette_name, response['palettes'])
+            palette = response['palettes'][palette_name]
+            self.assertIn('type', palette)
+            self.assertIn('data', palette)
+            self.assertIsInstance(palette['data'], list, "'data' must be a list")
+            if palette['type'] == 'lut':
+                self.assertEqual(len(palette['data']), 1028, "LUT tables must have 1028 values (RGBA * 256)")
+            elif palette['type'] == 'anchorpoints':                    
+                self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")                        
+                for ap in palette['data']:
+                    self.assertIn('threshold', ap, "Anchorpoint must include 'threshold'")
+                    self.assertIn('color', ap, "Anchorpoint must include 'color'")
+                    self.assertIsInstance(ap['color'], list, "'color' must be a list")
+                    self.assertEqual(len(ap['color']), 4, "color must have 4 elements (RGBA)")
+                    self.assertLessEqual(max(ap["color"]), 255, "Color values must be between 0 and 255")
+                self.assertEqual(palette['data'][0]["threshold"], 0.0, "The first anchorpoint must start at 0.0")
+                self.assertEqual(palette['data'][-1]["threshold"], 1.0, "The last anchorpoint must end at 1.0")

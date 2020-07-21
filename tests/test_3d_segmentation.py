@@ -14,7 +14,7 @@ class Test3DSegmentation(MockServerTestCase):
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
         result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
-            '8900', '-o', self.output_dir, '-i', self.input_dir], cwd='inference-test-tool',
+            self.inference_port, '-o', self.output_dir, '-i', self.input_dir], cwd='inference-test-tool',
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
         
         # Test that the command executed successfully
@@ -68,27 +68,15 @@ class Test3DSegmentation(MockServerTestCase):
             self.assertEqual(mask.shape[0], data_shape['timepoints'] * data_shape['depth'] * data_shape['width'] * data_shape['height'])
 
             if part['binary_type'] == 'heatmap':
-                if 'palette' in part:
-                    palette_name = part['palette']
-                    self.assertIn('palettes', data)
-                    self.assertIn(palette_name, data['palettes'])
-                    palette = data['palettes'][palette_name]
-                    self.assertIn('type', palette)
-                    self.assertIn('data', palette)
-                    self.assertIsInstance(palette['data'], list, "'data' must be a list")
-                    if palette['type'] == 'lut':
-                        self.assertEqual(len(palette['data']), 1028, "LUT tables must have 1028 values (RGBA * 256)")
-                    elif palette['type'] == 'anchorpoints':                    
-                        self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")                        
-                        for ap in palette['data']:
-                            self.assertIn('threshold', ap, "Anchorpoint must include 'threshold'")
-                            self.assertIn('color', ap, "Anchorpoint must include 'color'")
-                            self.assertIsInstance(ap['color'], list, "'color' must be a list")
-                            self.assertEqual(len(ap['color']), 4, "color must have 4 elements (RGBA)")
-                            self.assertLessEqual(max(ap["color"]), 255, "Color values must be between 0 and 255")
-                        self.assertEqual(palette['data'][0]["threshold"], 0.0, "The first anchorpoint must start at 0.0")
-                        self.assertEqual(palette['data'][-1]["threshold"], 1.0, "The last anchorpoint must end at 1.0")
+                self.validate_heatmap_palettes(part, data)
             elif part['binary_type'] == 'numeric_label_mask':
-                self.assertIn('label_map', part)
+                self.assertIn('label_map', part, "A numeric label mask must have a 'label_map' object.")
+                label_map = part['label_map']
+                labels = label_map.keys()
+                for l in labels:
+                    self.assertTrue(l.isdigit(), "The keys in the 'label_map' must be ints.")
+                int_labels = [int(l) for l in labels]                
+                self.assertLessEqual(mask.max(), max(int_labels), "There are values in the mask which have\
+                     no associated label from the 'label_map'.")
 
         print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)
