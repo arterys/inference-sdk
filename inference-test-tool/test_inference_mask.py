@@ -40,7 +40,7 @@ def apply_lut(mask, colormap):
 
 def create_lut_from_anchorpoints(anchorpoints):
     assert anchorpoints[0]['threshold'] == 0.0, "The first anchorpoint must have a threshold of 0.0"
-    assert anchorpoints[-1]['threshold'] == 1.0, "The flast anchorpoint must have a threshold of 1.0"
+    assert anchorpoints[-1]['threshold'] == 1.0, "The last anchorpoint must have a threshold of 1.0"
 
     lut = []
     for c in range(4):
