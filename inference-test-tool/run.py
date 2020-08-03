@@ -168,7 +168,7 @@ def parse_args():
     parser.add_argument("-l", "--include_label_plots", default=False, help="If the model's output are labels and they should be plotted"
         "on top of the .png files.", action='store_true')
     parser.add_argument("--host", default='0.0.0.0', help="Host where inference SDK is hosted")
-    parser.add_argument("-p", "--port", default='8900', help="Port of inference SDK host")
+    parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
     parser.add_argument('-a', '--attachments', nargs='+', default=[], help='One or more paths to files add as attachments to the request')
     parser.add_argument("-S", "--send_study_size", default=False, help="If the study size should be send in the request JSON",

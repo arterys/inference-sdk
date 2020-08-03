@@ -23,8 +23,8 @@ class MockServerTestCase(unittest.TestCase):
         should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
         if should_start_server:
             print("Starting", self.test_name)
-            self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, encoding='utf-8')
+            self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name],
+                cwd='src', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
         else:
             self.inference_port = os.getenv('ARTERYS_SDK_INFERENCE_SERVER_PORT', '8900')
             print("Assuming the server is already running.")
