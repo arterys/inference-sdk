@@ -26,6 +26,7 @@ jobs:
         pip install -r tests/requirements.txt
     - name: Pre build mock server docker image
       run: |
+        cd src/
         docker build -t arterys_inference_server .
     - name: Test the mock inference server
       run: |
