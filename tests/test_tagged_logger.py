@@ -1,7 +1,7 @@
 import unittest
 import logging
 
-from utils.tagged_logger import TaggedLogger
+from src.utils.tagged_logger import TaggedLogger
 
 class TestLogHandler(logging.Handler):
     def emit(self, record):
