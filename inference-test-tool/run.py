@@ -31,7 +31,7 @@ SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder, attachments):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -48,10 +48,13 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
             inference_command = 'get-probability-mask-2D'
         else:
             print("Performing 3D mask segmentation")
-            inference_command = 'get-probability-mask'
+            inference_command = 'get-probability-mask-3D'
     else:
         inference_command = 'other'
 
+    if override_inference_command:
+        inference_command = override_inference_command
+    
     request_json = {'request': 'post',
                     'route': '/',
                     'inference_command': inference_command}
@@ -82,9 +85,10 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
             continue
 
     print('Sending {} files...'.format(len(images)))
-    request_json['depth'] = count
-    request_json['height'] = height
-    request_json['width'] = width
+    if send_study_size:
+        request_json['depth'] = count
+        request_json['height'] = height
+        request_json['width'] = width
 
     file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
 
@@ -148,6 +152,9 @@ def parse_args():
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
     parser.add_argument('-a', '--attachments', nargs='+', default=[], help='One or more paths to files add as attachments to the request')
+    parser.add_argument("-S", "--send_study_size", default=False, help="If the study size should be send in the request JSON",
+        action='store_true')
+    parser.add_argument("-c", "--inference_command", default=None, help="If set, overrides the 'inference_command' send in the request")
     args = parser.parse_args()
 
     return args
@@ -155,4 +162,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
-    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments)
+    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size)

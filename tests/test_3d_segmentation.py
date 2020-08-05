@@ -14,8 +14,8 @@ class Test3DSegmentation(MockServerTestCase):
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
         result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
-            self.inference_port, '-o', self.output_dir, '-i', self.input_dir], cwd='inference-test-tool',
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+            self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(), 
+            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
 
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")
@@ -77,5 +77,7 @@ class Test3DSegmentation(MockServerTestCase):
                 int_labels = [int(l) for l in labels]
                 self.assertLessEqual(mask.max(), max(int_labels), "There are values in the mask which have\
                      no associated label from the 'label_map'.")
+                str_labels = label_map.values()
+                self.assertEqual(len(set(str_labels)), len(str_labels), "The values in 'label_map' must be unique.")
 
         print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)
