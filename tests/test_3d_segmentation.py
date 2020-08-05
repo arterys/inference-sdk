@@ -55,9 +55,6 @@ class Test3DSegmentation(MockServerTestCase):
                 # The rest of the test does not apply
                 continue
 
-            if part['binary_type'] != 'numeric_label_mask':
-                self.assertIsInstance(part['label'], str)
-
             self.assertIn('binary_data_shape', part)
             data_shape = part['binary_data_shape']
             self.assertIsInstance(data_shape['timepoints'], int)
