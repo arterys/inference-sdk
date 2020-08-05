@@ -17,6 +17,7 @@ class MockServerTestCase(unittest.TestCase):
     test_container_name = "arterys_inference_server_tests"
     server_proc = None
     inference_port = '8900'
+    additional_flags = ""
 
     def setUp(self):
         should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)        
@@ -32,6 +33,8 @@ class MockServerTestCase(unittest.TestCase):
         if override_input_folder != "":
             print("Overriding input folder with", override_input_folder)
             self.input_dir = override_input_folder
+
+        self.additional_flags = os.getenv('ARTERYS_TESTS_ADDITIONAL_FLAGS', "")
 
         def cleanup():
             print(term_colors.OKBLUE + "Performing clean up. Stopping inference server...\n", term_colors.ENDC)

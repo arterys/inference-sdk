@@ -31,10 +31,10 @@ SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder, attachments):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
-    
+
     images = load_image_data(file_path)
     images = sort_images(images)
 
@@ -51,12 +51,17 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
             inference_command = 'get-probability-mask-3D'
     else:
         inference_command = 'other'
-        
-    request_json = {'request': 'post', 
+
+    if override_inference_command:
+        inference_command = override_inference_command
+    
+    request_json = {'request': 'post',
                     'route': '/',
                     'inference_command': inference_command}
 
     count = 0
+    width = 0
+    height = 0
     for att in attachments:
         count += 1
         field = str(count)
@@ -67,6 +72,9 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     for image in images:
         try:
             dcm_file = pydicom.dcmread(image.path)
+            if width == 0 or height == 0:
+                width = dcm_file.Columns
+                height = dcm_file.Rows
             count += 1
             field = str(count)
             fo = open(image.path, 'rb').read()
@@ -75,17 +83,21 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         except:
             print('File {} is not a DICOM file'.format(image.path))
             continue
-    
+
     print('Sending {} files...'.format(len(images)))
+    if send_study_size:
+        request_json['depth'] = count
+        request_json['height'] = height
+        request_json['width'] = width
 
     file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
-    
+
     me = MultipartEncoder(fields=file_dict)
     boundary = me.content_type.split('boundary=')[1]
     headers['Content-Type'] = headers['Content-Type'] + 'boundary="{}"'.format(boundary)
 
     r = requests.post('http://' + host + ':' + port + '/', data=me, headers=headers)
-    
+
     if r.status_code != 200:
         print("Got error status code ", r.status_code)
         exit(1)
@@ -103,7 +115,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         assert mask_count == len(multipart_data.parts) - 2, \
             "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
             .format(len(multipart_data.parts) - 2, mask_count)
-        
+
         masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
 
         if images[0].position is None:
@@ -132,19 +144,22 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
-    parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask", 
+    parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask",
         action='store_true')
-    parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes", 
+    parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
     parser.add_argument('-a', '--attachments', nargs='+', default=[], help='One or more paths to files add as attachments to the request')
+    parser.add_argument("-S", "--send_study_size", default=False, help="If the study size should be send in the request JSON",
+        action='store_true')
+    parser.add_argument("-c", "--inference_command", default=None, help="If set, overrides the 'inference_command' send in the request")
     args = parser.parse_args()
-    
+
     return args
 
 if __name__ == '__main__':
     args = parse_args()
     model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
-    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments)
+    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size)
