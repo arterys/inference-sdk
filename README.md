@@ -466,7 +466,7 @@ If you don't specify any arguments, a usage message will be shown.
 The script accepts the following parameters:
 
 ```
-./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [--port PORT] [-i /path/to/dicom/files] [-a attachment1 ... attachmentN]
+./send-inference-request.sh [-h] [-s] [-b] [--host HOST] [--port PORT] [-i /path/to/dicom/files] [-a attachment1 ... attachmentN] [-S] [-c INFERENCE_COMMAND]
 ```
 
 Parameters:
@@ -476,6 +476,8 @@ Parameters:
 * `--host` and `--port`: host and port of inference server
 * `-i`: Input files
 * `-a`: Add attachments to the request. Arguments should be paths to files.
+* `-S`: If the study size should be send in the request JSON
+* `-c`: If set, overrides the 'inference_command' send in the request
 
 > PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool. 
 You can check if the model's output will be correctly displayed on the Arterys web app.
@@ -526,6 +528,15 @@ The server must be stopped before running the tests.
 If you want to start the inference server differently then start it before running the tests and define the env variable 'ARTERYS_SDK_ASSUME_SERVER_STARTED=true'.
 
 If you want to use a custom test study then save it in a folder under `tests/data` and define the env var 'ARTERYS_OVERRIDE_TEST_INPUT_FOLDER=<folder_name>'.
+
+In case you want to use any other flag available when running `send-inference-request.sh` you can set `ARTERYS_TESTS_ADDITIONAL_FLAGS` to all the additional flags you want to pass to that command.
+This will be appended to the call to `send-inference-request.sh`.
+For example:
+
+```
+ARTERYS_TESTS_ADDITIONAL_FLAGS="-S -a attachment1.txt"
+```
+
 
 ## Nifti image format support
 
