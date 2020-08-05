@@ -16,7 +16,7 @@ class Test3DSegmentation(MockServerTestCase):
         result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir], cwd='inference-test-tool',
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-        
+
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")
         self.assertEqual(result.returncode, 0)
@@ -34,13 +34,13 @@ class Test3DSegmentation(MockServerTestCase):
         # Test JSON response
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')
         self.assertTrue(os.path.exists(file_path))
-        
+
         with open(file_path) as json_file:
             data = json.load(json_file)
-        
+
         self.assertIn('protocol_version', data)
-        self.assertIn('parts', data)        
-        
+        self.assertIn('parts', data)
+
         # Test if the amount of binary buffers is equals to the elements in `parts`
         output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
         output_files = os.listdir(output_folder_path)
@@ -48,13 +48,15 @@ class Test3DSegmentation(MockServerTestCase):
         self.assertEqual(count_masks, len(data['parts']))
 
         for index, part in enumerate(data['parts']):
-            self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
             self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask'],
                 "'binary_type' is not among the supported mask types")
             if part['binary_type'] == 'dicom_secondary_capture':
                 # The rest of the test does not apply
                 continue
+
+            if part['binary_type'] != 'numeric_label_mask':
+                self.assertIsInstance(part['label'], str)
 
             self.assertIn('binary_data_shape', part)
             data_shape = part['binary_data_shape']
@@ -75,7 +77,7 @@ class Test3DSegmentation(MockServerTestCase):
                 labels = label_map.keys()
                 for l in labels:
                     self.assertTrue(l.isdigit(), "The keys in the 'label_map' must be ints.")
-                int_labels = [int(l) for l in labels]                
+                int_labels = [int(l) for l in labels]
                 self.assertLessEqual(mask.max(), max(int_labels), "There are values in the mask which have\
                      no associated label from the 'label_map'.")
 
