@@ -46,6 +46,24 @@ def healthcheck_handler():
 
     return make_response('READY', 200)
 
+def get_classification_response(json_input, dicom_instances):
+    dcm = pydicom.read_file(dicom_instances[0])
+    response_json = {
+        'protocol_version': '1.0',
+        'parts': [],
+        'series_ml_json': {
+            dcm.SeriesInstanceUID: {
+                'label': 'healthy',
+                'value': '0.9',
+                'nested_labels': {
+                    'condition1': '0.9',
+                    'condition2': '0.2'
+                }
+            }
+        }
+    }
+    return response_json, []
+
 def get_bounding_box_2d_response(json_input, dicom_instances):
     dcm = pydicom.read_file(dicom_instances[0])
     response_json = {
@@ -129,6 +147,14 @@ def get_probability_mask_2D_response(json_input, dicom_instances):
 
     return response_json, masks
 
+def request_handler_classification(json_input, dicom_instances, input_digest):
+    """
+    A mock inference model that returns labels in free-form json format
+    """
+    transaction_logger = tagged_logger.TaggedLogger(logger)
+    transaction_logger.add_tags({ 'input_hash': input_digest })
+    transaction_logger.info('mock_model received json_input={}'.format(json_input))
+    return get_classification_response(json_input, dicom_instances)
 
 def request_handler_bbox(json_input, dicom_instances, input_digest):
     """
@@ -166,6 +192,8 @@ def parse_args():
         action='store_true')
     group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
+    group.add_argument("-c", "--classification_model", default=False, help="If the model's output are labels",
+        action='store_true')  
     args = parser.parse_args()
 
     return args
@@ -178,6 +206,8 @@ if __name__ == '__main__':
         app.add_inference_route('/', request_handler_bbox)
     elif args.segmentation_model_3D:
         app.add_inference_route('/', request_handler_3D_segmentation)
+    elif args.classification_model:
+        app.add_inference_route('/', request_handler_classification)
     else:
         app.add_inference_route('/', request_handler_2D_segmentation)
 
