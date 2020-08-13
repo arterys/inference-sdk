@@ -25,6 +25,9 @@ class Test2DSegmentation(MockServerTestCase):
 
         # Test that there is one binary mask saved per input image
         for (i, name) in enumerate(input_files):
+            print("found input_files:", name)
+
+        for (i, name) in enumerate(input_files):
             self.assertTrue('output_masks_{}.npy'.format(i + 1) in output_files)
 
         # Test that there was one PNG image generated for each input image
