@@ -23,12 +23,13 @@ class TestClassification(MockServerTestCase):
 
         output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
 
-        # Test that there was one PNG image generated for each input image
-        # If labels should be plotted on top of the generated .png files export the following before 
-        # running tests: `export ARTERYS_TESTS_ADDITIONAL_FLAGS=-include_label_plots` 
+        # If .png files with labels should be generated export the following before 
+        # running tests: `export ARTERYS_TESTS_ADDITIONAL_FLAGS=-l` 
         output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
-        for name in input_files:
-            self.assertTrue((name + '.png') in output_no_index)
+        
+        if '-l' in self.additional_flags or '-include_label_plots' in self.additional_flags:
+            for name in input_files:
+                self.assertTrue((name + '.png') in output_no_index)
 
         # Test JSON file contents
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')

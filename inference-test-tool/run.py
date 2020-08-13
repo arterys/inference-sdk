@@ -23,6 +23,7 @@ from requests_toolbelt.multipart import decoder
 import pydicom
 import numpy as np
 import test_inference_mask, test_inference_boxes, test_inference_classification
+from utils import create_folder
 
 
 from utils import load_image_data, sort_images
@@ -142,7 +143,9 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
 
     elif model_type == CLASSIFICATION_MODEL:
-        test_inference_classification.generate_images_with_labels(images, json_response, output_folder, include_label_plots)
+        create_folder(output_folder)
+        if include_label_plots:
+            test_inference_classification.generate_images_with_labels(images, json_response, output_folder)
 
     with open(os.path.join(output_folder, 'response.json'), 'w') as outfile:
         json.dump(json_response, outfile)

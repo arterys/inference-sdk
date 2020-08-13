@@ -8,10 +8,10 @@ import argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import pydicom
-from utils import load_image_data, create_folder, get_pixels
+from utils import load_image_data, get_pixels
 
-def generate_images_with_labels(images, json_response, output_folder, plot_labels):
-    """ Generates png images.
+def generate_images_with_labels(images, json_response, output_folder):
+    """ Generates png images with classification labels plotted on top.
 
     :param array [DCM_Image] images: images to be plotted on 
     :param dict json_response: dict containing the classification labels. It can be freeform, 
@@ -29,7 +29,6 @@ def generate_images_with_labels(images, json_response, output_folder, plot_label
         }
 
     :param string output_folder: path to output folder
-    :param boolean plot_labels: indicates whether to plot labels on top of png images
     """
 
     Y_SPACING = 10
@@ -37,7 +36,6 @@ def generate_images_with_labels(images, json_response, output_folder, plot_label
     X_INDENT = 5
     study_level_y = 0
 
-    create_folder(output_folder)
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
         series_instance_uid = dcm.SeriesInstanceUID
@@ -45,27 +43,26 @@ def generate_images_with_labels(images, json_response, output_folder, plot_label
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 3))
         pil_image = Image.fromarray(pixels)
         draw = ImageDraw.Draw(pil_image)
-
-        if plot_labels:
-            if index == 0 and 'study_ml_json' in json_response:
-                study_labels = json_response['study_ml_json']
-                draw.text((X_SPACING,study_level_y), text='Study level classification prediction:')
+        
+        if index == 0 and 'study_ml_json' in json_response:
+            study_labels = json_response['study_ml_json']
+            draw.text((X_SPACING,study_level_y), text='Study level classification prediction:')
+            study_level_y += Y_SPACING
+            for label, val in study_labels.items():
+                draw.text((X_SPACING+X_INDENT, study_level_y), text=(f'{label}: {val}'))
                 study_level_y += Y_SPACING
-                for label, val in study_labels.items():
-                    draw.text((X_SPACING+X_INDENT, study_level_y), text=(f'{label}: {val}'))
-                    study_level_y += Y_SPACING
-            
-            y = study_level_y
-            series_labels = {}
+        
+        y = study_level_y
+        series_labels = {}
 
-            if 'series_ml_json' in json_response and series_instance_uid in json_response['series_ml_json']:
-                series_labels = json_response['series_ml_json'][series_instance_uid]
+        if 'series_ml_json' in json_response and series_instance_uid in json_response['series_ml_json']:
+            series_labels = json_response['series_ml_json'][series_instance_uid]
 
-            draw.text((X_SPACING,y), text='Series level classification prediction:')
+        draw.text((X_SPACING,y), text='Series level classification prediction:')
+        y += Y_SPACING
+        for label, val in series_labels.items():
+            draw.text((X_SPACING+X_INDENT, y), text=(f'{label}: {val}'))   
             y += Y_SPACING
-            for label, val in series_labels.items():
-                draw.text((X_SPACING+X_INDENT, y), text=(f'{label}: {val}'))   
-                y += Y_SPACING
             
         # write image to output folder
         output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
