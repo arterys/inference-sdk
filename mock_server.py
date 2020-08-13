@@ -1,7 +1,7 @@
 """
 A mock server that uses gateway.py to establish a web server. Depending on the command line options provided,
-"-s2D", "-s3D" or "-b", the server is capable of returning either a sample 2D segmentation, 3D segmentation or
-bounding box correspondingly when an inference reuqest is sent to the "/" route.
+"-s2D", "-s3D", "-b" or "c" the server is capable of returning either a sample 2D segmentation, 3D segmentation,
+bounding box or classification labels correspondingly when an inference reuqest is sent to the "/" route.
 
 """
 
@@ -57,9 +57,14 @@ def get_classification_response(json_input, dicom_instances):
                 'value': '0.9',
                 'nested_labels': {
                     'condition1': '0.9',
-                    'condition2': '0.2'
+                    'condition2': '0.2', 
+                    'condition3': '0.22'
                 }
             }
+        }, 
+        'study_ml_json': {
+            'label1': 'condition1',
+            'label2': 'condition2'
         }
     }
     return response_json, []

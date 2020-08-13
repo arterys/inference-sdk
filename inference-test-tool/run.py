@@ -22,16 +22,17 @@ from requests_toolbelt import MultipartEncoder
 from requests_toolbelt.multipart import decoder
 import pydicom
 import numpy as np
-import test_inference_mask
-import test_inference_boxes
+import test_inference_mask, test_inference_boxes, test_inference_classification
+
 
 from utils import load_image_data, sort_images
 
 SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
+CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -49,6 +50,9 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         else:
             print("Performing 3D mask segmentation")
             inference_command = 'get-probability-mask-3D'
+    elif model_type == CLASSIFICATION_MODEL:
+        print("Performing classification")
+        inference_command = 'get-classification-labels'
     else:
         inference_command = 'other'
 
@@ -137,6 +141,9 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         boxes = json_response['bounding_boxes_2d']
         test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
 
+    elif model_type == CLASSIFICATION_MODEL:
+        test_inference_classification.generate_images_with_labels(images, json_response, output_folder, include_label_plots)
+
     with open(os.path.join(output_folder, 'response.json'), 'w') as outfile:
         json.dump(json_response, outfile)
 
@@ -148,6 +155,10 @@ def parse_args():
         action='store_true')
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
+    parser.add_argument("-C", "--classification_model", default=False, help="If the model's output are labels",
+        action='store_true') 
+    parser.add_argument("-l", "--include_label_plots", default=False, help="If the model's output are labels and they should be plotted"
+        "on top of the .png files.", action='store_true')
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
     parser.add_argument("-p", "--port", default='8000', help="Port of inference SDK host")
     parser.add_argument("-o", "--output", default='output', help="Folder where the script will save the response / output files")
@@ -161,5 +172,12 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    model_type = SEGMENTATION_MODEL if args.segmentation_model else BOUNDING_BOX if args.bounding_box_model else OTHER
-    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size)
+    if args.segmentation_model:
+        model_type = SEGMENTATION_MODEL 
+    elif args.bounding_box_model:
+        model_type = BOUNDING_BOX  
+    elif args.classification_model:
+        model_type = CLASSIFICATION_MODEL
+    else:
+        model_type = OTHER
+    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size, args.include_label_plots)

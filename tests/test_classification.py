@@ -13,7 +13,7 @@ class TestClassification(MockServerTestCase):
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
-        result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
+        result = subprocess.run(['./send-inference-request.sh', '-C', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
             cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
         
@@ -24,6 +24,8 @@ class TestClassification(MockServerTestCase):
         output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
 
         # Test that there was one PNG image generated for each input image
+        # If labels should be plotted on top of the generated .png files export the following before 
+        # running tests: `export ARTERYS_TESTS_ADDITIONAL_FLAGS=-include_label_plots` 
         output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
         for name in input_files:
             self.assertTrue((name + '.png') in output_no_index)
@@ -38,7 +40,7 @@ class TestClassification(MockServerTestCase):
         schema = {
             'type' : 'object',
             'required': ['parts', 'protocol_version'],
-            'oneOf': [
+            'anyOf': [
                 {'required': ['study_ml_json']},
                 {'required': ['series_ml_json']}
             ],
@@ -46,7 +48,7 @@ class TestClassification(MockServerTestCase):
                 'protocol_version' : {'type' : 'string'},
                 'parts' : {'type' : 'array'},
                 'series_ml_json': {
-                    'type': 'object'         
+                    'type': 'object'
                 },
                 'study_ml_json': {
                     'type': 'object'
