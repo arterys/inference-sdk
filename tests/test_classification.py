@@ -8,12 +8,12 @@ from jsonschema import validate
 class TestClassification(MockServerTestCase):
     input_dir = 'test_classification/'
     output_dir = 'test_classification_out/'
-    command = '-c'
+    command = '-cl'
     test_name = 'Classification test'
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
-        result = subprocess.run(['./send-inference-request.sh', '-C', '--host', '0.0.0.0', '-p',
+        result = subprocess.run(['./send-inference-request.sh', '-cl', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
             cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
         

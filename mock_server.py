@@ -1,6 +1,6 @@
 """
 A mock server that uses gateway.py to establish a web server. Depending on the command line options provided,
-"-s2D", "-s3D", "-b" or "c" the server is capable of returning either a sample 2D segmentation, 3D segmentation,
+"-s2D", "-s3D", "-b" or "-cl" the server is capable of returning either a sample 2D segmentation, 3D segmentation,
 bounding box or classification labels correspondingly when an inference reuqest is sent to the "/" route.
 
 """
@@ -197,7 +197,7 @@ def parse_args():
         action='store_true')
     group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
-    group.add_argument("-c", "--classification_model", default=False, help="If the model's output are labels",
+    group.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
         action='store_true')  
     args = parser.parse_args()
 

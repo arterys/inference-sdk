@@ -155,7 +155,7 @@ def parse_args():
         action='store_true')
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
-    parser.add_argument("-C", "--classification_model", default=False, help="If the model's output are labels",
+    parser.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
         action='store_true') 
     parser.add_argument("-l", "--include_label_plots", default=False, help="If the model's output are labels and they should be plotted"
         "on top of the .png files.", action='store_true')
