@@ -1,7 +1,7 @@
 """
 A mock server that uses gateway.py to establish a web server. Depending on the command line options provided,
-"-s2D", "-s3D" or "-b", the server is capable of returning either a sample 2D segmentation, 3D segmentation or
-bounding box correspondingly when an inference reuqest is sent to the "/" route.
+"-s2D", "-s3D", "-b" or "-cl" the server is capable of returning either a sample 2D segmentation, 3D segmentation,
+bounding box or classification labels correspondingly when an inference reuqest is sent to the "/" route.
 
 """
 
@@ -45,6 +45,29 @@ def healthcheck_handler():
     # Return if the model is ready to receive inference requests
 
     return make_response('READY', 200)
+
+def get_classification_response(json_input, dicom_instances):
+    dcm = pydicom.read_file(dicom_instances[0])
+    response_json = {
+        'protocol_version': '1.0',
+        'parts': [],
+        'series_ml_json': {
+            dcm.SeriesInstanceUID: {
+                'label': 'healthy',
+                'value': '0.9',
+                'nested_labels': {
+                    'condition1': '0.9',
+                    'condition2': '0.2', 
+                    'condition3': '0.22'
+                }
+            }
+        }, 
+        'study_ml_json': {
+            'label1': 'condition1',
+            'label2': 'condition2'
+        }
+    }
+    return response_json, []
 
 def get_bounding_box_2d_response(json_input, dicom_instances):
     dcm = pydicom.read_file(dicom_instances[0])
@@ -129,6 +152,14 @@ def get_probability_mask_2D_response(json_input, dicom_instances):
 
     return response_json, masks
 
+def request_handler_classification(json_input, dicom_instances, input_digest):
+    """
+    A mock inference model that returns labels in free-form json format
+    """
+    transaction_logger = tagged_logger.TaggedLogger(logger)
+    transaction_logger.add_tags({ 'input_hash': input_digest })
+    transaction_logger.info('mock_model received json_input={}'.format(json_input))
+    return get_classification_response(json_input, dicom_instances)
 
 def request_handler_bbox(json_input, dicom_instances, input_digest):
     """
@@ -166,6 +197,8 @@ def parse_args():
         action='store_true')
     group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
+    group.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
+        action='store_true')  
     args = parser.parse_args()
 
     return args
@@ -178,6 +211,8 @@ if __name__ == '__main__':
         app.add_inference_route('/', request_handler_bbox)
     elif args.segmentation_model_3D:
         app.add_inference_route('/', request_handler_3D_segmentation)
+    elif args.classification_model:
+        app.add_inference_route('/', request_handler_classification)
     else:
         app.add_inference_route('/', request_handler_2D_segmentation)
 
