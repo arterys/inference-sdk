@@ -20,13 +20,13 @@ class MockServerTestCase(unittest.TestCase):
     additional_flags = ""
 
     def setUp(self):
-        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)        
+        should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
         if should_start_server:
             print("Starting", self.test_name)
-            self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE, 
+            self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, encoding='utf-8')
         else:
-            self.inference_port = os.getenv('ARTERYS_SDK_INFERENCE_SERVER_PORT', '8900')            
+            self.inference_port = os.getenv('ARTERYS_SDK_INFERENCE_SERVER_PORT', '8900')
             print("Assuming the server is already running.")
 
         override_input_folder = os.getenv('ARTERYS_OVERRIDE_TEST_INPUT_FOLDER', "")
@@ -35,6 +35,7 @@ class MockServerTestCase(unittest.TestCase):
             self.input_dir = override_input_folder
 
         self.additional_flags = os.getenv('ARTERYS_TESTS_ADDITIONAL_FLAGS', "")
+        healthcheck_method = os.getenv('ARTERYS_SDK_HEALTHCHECK_METHOD', "GET")
 
         def cleanup():
             print(term_colors.OKBLUE + "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
@@ -47,12 +48,15 @@ class MockServerTestCase(unittest.TestCase):
 
         self.addCleanup(cleanup)
         copy_tree(os.path.join('tests/data', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))
-        self.check_service_up(self.inference_port)
+        self.check_service_up(self.inference_port, method=healthcheck_method)
 
-    def check_service_up(self, port, endpoint="/", params={}):
+    def check_service_up(self, port, method="GET"):
         for i in range(240):
             try:
-                response = requests.get("http://localhost:{}/healthcheck".format(port))
+                if method == "GET":
+                    response = requests.get("http://localhost:{}/healthcheck".format(port))
+                else:
+                    response = requests.post("http://localhost:{}/healthcheck".format(port))
             except requests.exceptions.ConnectionError:
                 pass
             else:
@@ -85,9 +89,9 @@ class MockServerTestCase(unittest.TestCase):
 
     def validate_heatmap_palettes(self, part, response):
         """ Validates that the heatmap 'part' contains a valid palette
-            
+
             part: dict with contents of a response 'part'
-            response: dict with the whole JSON response from inference server 
+            response: dict with the whole JSON response from inference server
         """
         if 'palette' in part:
             palette_name = part['palette']
@@ -99,8 +103,8 @@ class MockServerTestCase(unittest.TestCase):
             self.assertIsInstance(palette['data'], list, "'data' must be a list")
             if palette['type'] == 'lut':
                 self.assertEqual(len(palette['data']), 1028, "LUT tables must have 1028 values (RGBA * 256)")
-            elif palette['type'] == 'anchorpoints':                    
-                self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")                        
+            elif palette['type'] == 'anchorpoints':
+                self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")
                 for ap in palette['data']:
                     self.assertIn('threshold', ap, "Anchorpoint must include 'threshold'")
                     self.assertIn('color', ap, "Anchorpoint must include 'color'")

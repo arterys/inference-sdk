@@ -59,7 +59,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
 
     if override_inference_command:
         inference_command = override_inference_command
-    
+
     request_json = {'request': 'post',
                     'route': '/',
                     'inference_command': inference_command}
@@ -112,14 +112,19 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     json_response = json.loads(multipart_data.parts[0].text)
     print("JSON response:", json_response)
 
+    last_part = multipart_data.parts[-1]
+    has_digests = last_part.headers[b'Content-Type'] == b'text/plain' and \
+        len(multipart_data.parts[-1].text) == 129 and multipart_data.parts[-1].text[64] == ':'
+
     if model_type == SEGMENTATION_MODEL:
         mask_count = len(json_response["parts"])
 
         # Assert that we get one binary part for each object in 'parts'
         # The additional two multipart object are: JSON response and request:response digests
-        assert mask_count == len(multipart_data.parts) - 2, \
+        non_buffer_count = 2 if has_digests else 1
+        assert mask_count == len(multipart_data.parts) - non_buffer_count, \
             "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
-            .format(len(multipart_data.parts) - 2, mask_count)
+            .format(len(multipart_data.parts) - non_buffer_count, mask_count)
 
         masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
 
@@ -159,7 +164,7 @@ def parse_args():
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
     parser.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
-        action='store_true') 
+        action='store_true')
     parser.add_argument("-l", "--include_label_plots", default=False, help="If the model's output are labels and they should be plotted"
         "on top of the .png files.", action='store_true')
     parser.add_argument("--host", default='arterys-inference-sdk-server', help="Host where inference SDK is hosted")
@@ -176,9 +181,9 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     if args.segmentation_model:
-        model_type = SEGMENTATION_MODEL 
+        model_type = SEGMENTATION_MODEL
     elif args.bounding_box_model:
-        model_type = BOUNDING_BOX  
+        model_type = BOUNDING_BOX
     elif args.classification_model:
         model_type = CLASSIFICATION_MODEL
     else:
