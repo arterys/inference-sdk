@@ -167,6 +167,7 @@ For every element in the “parts” array, there should be a corresponding bina
 There are multiple possible interpretations for segmentation masks supported by the SDK, explained in the next subsections:
 
 * Probability mask
+* Boolean mask
 * Heatmap for 3D Series
 * Heatmap for 2D Series (e.g. X-Rays)
 * Numeric label mask
@@ -203,9 +204,17 @@ A sample output of the JSON looks like this:
 ```
 
 The data format of the probability mask binary buffers is as follows:
- 
-* Each pixel value is expected to be uint8 (0 to 255), not a float. 
+
+* Each pixel value is expected to be uint8 (0 to 255), not a float.
   Value of 0 means a probability of 0, value of 255 means a probability of 1.0 (mapping is linear).
+
+###### Boolean mask for 3D Series
+
+Boolean masks are actually a subtype of probability masks.
+When you specify a `binary_type` of `boolean_mask` then every non-zero value of the mask will be taken as positive.
+It has the same effect as a probability mask with `probability_threshold` set to something like 0.003.
+
+Follow the steps mentioned for probability masks but set `binary_type` to `boolean_mask` if your model returns a boolean mask.
 
 ###### Heatmaps for 3D series
 
