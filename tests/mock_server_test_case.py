@@ -51,7 +51,7 @@ class MockServerTestCase(unittest.TestCase):
         self.check_service_up(self.inference_port, method=healthcheck_method)
 
     def check_service_up(self, port, method="GET"):
-        for i in range(30):
+        for i in range(240):
             try:
                 if method == "GET":
                     response = requests.get("http://localhost:{}/healthcheck".format(port))
