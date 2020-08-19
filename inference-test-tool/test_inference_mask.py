@@ -25,7 +25,7 @@ def get_colors(index, max_value):
     else:
         rng = np.random.RandomState(index)
         arr = rng.randint(0, max_value, 3)
-    
+
     return np.append(arr, [max_value])
 
 def apply_lut(mask, colormap):
@@ -45,18 +45,18 @@ def create_lut_from_anchorpoints(anchorpoints):
     lut = []
     for c in range(4):
         channel_arr = []
-        for p in range(len(anchorpoints) - 1):    
+        for p in range(len(anchorpoints) - 1):
             thr = (anchorpoints[p+1]['threshold'] - anchorpoints[p]['threshold']) * 256
-            
+
             # Make sure we get 256 values and there is no rounding issue
-            if p == len(anchorpoints) - 2:                
+            if p == len(anchorpoints) - 2:
                 thr = 256 - len(channel_arr)
 
-            values = np.linspace(anchorpoints[p]['color'][c], 
+            values = np.linspace(anchorpoints[p]['color'][c],
                 anchorpoints[p+1]['color'][c], int(thr), dtype=np.uint8)
             channel_arr.extend(values)
         lut.append(channel_arr)
-    lut = np.transpose(np.array(lut))    
+    lut = np.transpose(np.array(lut))
     return lut
 
 def _get_images_and_masks(dicom_images, inference_results):
@@ -74,14 +74,14 @@ def _get_images_and_masks(dicom_images, inference_results):
 
 def generate_images_with_masks(dicom_images, inference_results, response_json, output_folder):
     """ This function will save images to disk to preview how a mask looks on the input images.
-        It saves one image for each input DICOM file. All masks in `inference_results` will be applied to the 
+        It saves one image for each input DICOM file. All masks in `inference_results` will be applied to the
         whole 3D volume of DICOM images. Each mask will show in a different color.
-        
+
         - dicom_images: Array of DCM_Image or path to a folder with images
         - inference_results: Array with mask buffers (one for each image), or path to folder with a numpy file containing one mask.
         - response_json: The JSON response from the inference server
-        - output_folder: Where the output images will be saved 
-    """ 
+        - output_folder: Where the output images will be saved
+    """
     images, masks = _get_images_and_masks(dicom_images, inference_results)
     create_folder(output_folder)
 
@@ -113,8 +113,8 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
             if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
                 continue
             # get mask for this image
-            image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]    
-            pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)                    
+            image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
+            pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
 
         offset += dcm.Rows * dcm.Columns
 
@@ -134,18 +134,18 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
     """ This function will save images to disk to preview how a mask looks on the input images.
         It saves one image for each input DICOM file with the corresponding `inference_results` mask
         applied as overlay.
-        
+
         - dicom_images: Array of DCM_Image or path to a folder with images
         - inference_results: Array with mask buffers (one for each image)
         - response_json: The JSON response from the inference server
-        - output_folder: Where the output images will be saved 
+        - output_folder: Where the output images will be saved
 
         The difference with `generate_images_with_masks` is that `generate_images_with_masks` applies each mask to the whole
         volume while this functions applies each mask to one image.
     """
     images, masks = _get_images_and_masks(dicom_images, inference_results)
     create_folder(output_folder)
-    
+
     for index, (image, mask, json_part) in enumerate(zip(images, masks, response_json["parts"])):
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
@@ -153,14 +153,14 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
         # Reshape and add alpha
         pixels = np.reshape(pixels, (-1, 3))
         pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
-        
-        # get mask for this image        
+
+        # get mask for this image
         pixels = _draw_mask_on_image(pixels, mask, json_part, response_json, index, 0)
 
         # write image to output folder
         output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
-        
+
         pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
         plt.imsave(output_filename, pixels)
 
@@ -172,9 +172,12 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
         "The size of mask {} ({}) does not match the size of the image ({})".format(mask_index, image_mask.shape[0], pixels.shape[0])
 
     # apply mask
-    if json_part['binary_type'] == 'probability_mask':            
+    if json_part['binary_type'] == 'probability_mask':
         threshold = (json_part['probability_threshold'] * 255) if 'probability_threshold' in json_part else 128
         pixels[image_mask > threshold] = pixels[image_mask > threshold] * (1 - mask_alpha) + \
+            (mask_alpha * np.array(get_colors(label, max_value)).astype(np.float)).astype(np.uint8)
+    elif json_part['binary_type'] == 'boolean_mask':
+        pixels[image_mask != 0] = pixels[image_mask != 0] * (1 - mask_alpha) + \
             (mask_alpha * np.array(get_colors(label, max_value)).astype(np.float)).astype(np.uint8)
     elif json_part['binary_type'] == 'numeric_label_mask':
         for n in range(1, max_value):
@@ -183,7 +186,7 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
     elif json_part['binary_type'] == 'heatmap':
         if 'palette' in json_part and json_part['palette'] in response_json['palettes']:
             palette = response_json['palettes'][json_part['palette']]
-            if palette['type'] == 'anchorpoints':                        
+            if palette['type'] == 'anchorpoints':
                 lut = create_lut_from_anchorpoints(palette['data'])
                 heatmap = apply_lut(image_mask, lut)
             else:
@@ -191,12 +194,11 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
         else:
             heatmap = apply_lut(image_mask, None)
         heatmap = np.reshape(heatmap, [-1, 4])
-        
+
         pixels = (pixels * (1 - mask_alpha) + np.reshape(mask_alpha * (heatmap[:, 3] / 255.0), (-1, 1)) * heatmap).astype(np.uint8)
         pixels[:, 3] = 255
     else:
         # Ignoring others like 'dicom_secondary_capture'
         pass
-    
+
     return pixels
-    

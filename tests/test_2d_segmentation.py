@@ -16,7 +16,7 @@ class Test2DSegmentation(MockServerTestCase):
         result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
             cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-        
+
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")
         self.assertEqual(result.returncode, 0)
@@ -35,10 +35,10 @@ class Test2DSegmentation(MockServerTestCase):
         # Test JSON response
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')
         self.assertTrue(os.path.exists(file_path))
-        
+
         with open(file_path) as json_file:
             data = json.load(json_file)
-        
+
         self.assertIn('protocol_version', data)
         self.assertIn('parts', data)
 
@@ -46,11 +46,11 @@ class Test2DSegmentation(MockServerTestCase):
         output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
         self.assertEqual(count_masks, len(data['parts']))
-        
+
         for index, part in enumerate(data['parts']):
             self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
-            self.assertIn(part['binary_type'], ['heatmap', 'dicom_secondary_capture', 'probability_mask'],
+            self.assertIn(part['binary_type'], ['heatmap', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
                 "'binary_type' is not among the supported mask types")
             if part['binary_type'] == 'dicom_secondary_capture':
                 # The rest of the test does not apply
