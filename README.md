@@ -118,19 +118,27 @@ For example:
 }
 ```
 
-##### Classification models
+##### Classification labels (and other additional information)
 
-The web viewer currently does not support classification models but we can work around that. 
-To do so send a bounding box for each image with the size of the whole image and the corresponding output label.
-So the JSON you would return could look like this (where `bottom_right` is the size of the image):
+Classification labels or any other information for the study or series of the input, which you want to include in the result,
+can be sent using `study_ml_json` or `series_ml_json` keys.
+Both these keys accept freeform JSON and its content will be shown as-is to the end users.
+For *series*, add the additional information nested under the appropiate SeriesInstanceUID.
 
-```json
-{ "protocol_version":"1.0",
-  "bounding_boxes_2d": [{ "label": "Lesion #1", 
-                          "SOPInstanceUID": "2.25.336451217722347364678629652826931415692", 
-                          "top_left": [0, 0], 
-                          "bottom_right": [1024, 1024]
-                          }]
+For example:
+
+```jsonc
+{
+    "protocol_version": "1.0",
+    "parts": [{...}], // unchanged
+    "study_ml_json": {
+      "label1": "xxx", // freeform
+    },
+    "series_ml_json": {
+      "X.X.X.X": { // SeriesInstanceUID
+        "label1": "xxx", // freeform
+      }, 
+   }
 }
 ```
 
@@ -333,30 +341,6 @@ If your model outputs linear measurements you can send those results in this for
             "end": [x, y]
         }
     ]
-}
-```
-
-##### Other information
-
-If your model outputs any other information for the study or series of the input, which you want to include in the result, 
-then you can send this data under the `study_ml_json` or `series_ml_json` keys.
-Both these keys accept freeform JSON and its content will be shown as-is to the end users. 
-For *series*, add the additional information nested under the appropiate SeriesInstanceUID.
-
-For example:
-
-```jsonc
-{
-    "protocol_version": "1.0",
-    "parts": [{...}], // unchanged
-    "study_ml_json": {
-      "label1": "xxx", // free formed
-    },
-    "series_ml_json": {
-      "X.X.X.X": { // SeriesInstanceUID
-        "label1": "xxx", // freeform
-      }, 
-   }
 }
 ```
 
