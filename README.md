@@ -1,20 +1,19 @@
-Arterys Inference SDK <!-- omit in toc --> 
+Arterys Inference SDK <!-- omit in toc -->
 ===
 [![Build](https://github.com/arterys/inference-sdk/workflows/Build/badge.svg)](https://github.com/arterys/inference-sdk/actions)
 
 The SDK helps you containerize your model into a Flask app with a predefined API to integrate it with the Arterys Marketplace.
 
-## Contents  <!-- omit in toc --> 
+## Contents  <!-- omit in toc -->
 
 - [Integrating the SDK](#integrating-the-sdk)
   - [The healthcheck endpoint](#the-healthcheck-endpoint)
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
       - [Bounding box](#bounding-box)
-      - [Classification models](#classification-models)
+      - [Classification labels (and other additional information)](#classification-and-others)
       - [Segmentation masks](#segmentation-masks)
       - [Linear measurements](#linear-measurements)
-      - [Other information](#other-information)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
     - [Adding GPU support](#adding-gpu-support)
@@ -29,7 +28,7 @@ The SDK helps you containerize your model into a Flask app with a predefined API
 
 ## Integrating the SDK
 
-You should use this SDK to allow the Arterys web app to invoke your model. 
+You should use this SDK to allow the Arterys web app to invoke your model.
 The `gateway.py` is a helper class that creates a Flask server to communicate with the Arterys app via HTTP.
 
 You will have to provide 2 endpoints:
@@ -39,16 +38,16 @@ You will have to provide 2 endpoints:
 
 ### The healthcheck endpoint
 
-The Arterys app relies on the result from this endpoint to decide whether or not the inference service is ready to field requests. 
-You should handle healthcheck requests by returning a string 'READY' if your server is ready. 
-Otherwise return something else, with status code 200 in both cases. 
+The Arterys app relies on the result from this endpoint to decide whether or not the inference service is ready to field requests.
+You should handle healthcheck requests by returning a string 'READY' if your server is ready.
+Otherwise return something else, with status code 200 in both cases.
 Returning "READY" too early will result in failures due to requests being sent too early.
 
 You can do this by modifying the `healthcheck_handler` function in `mock_server.py`
 
 ### Handling an inference request
 
-The Flask server defined in `gateway.py` accepts inference requests in the form of a multipart/related HTTP request. 
+The Flask server defined in `gateway.py` accepts inference requests in the form of a multipart/related HTTP request.
 The parts in the multipart request are parsed into
 a JSON object and an array of buffers containing contents of input DICOM files. They are in turn passed to a handler
 function that you can implement and register with the gateway class. The return values of the handler function are
@@ -102,23 +101,23 @@ However, you will have to **parse the request, call your model and return a resp
 
 ##### Bounding box
 
-For a bounding box producing model, the output is expected to be a single JSON object. 
-Note the bounding_boxes_2d array could be extended to contain multiple entries. 
-The top_left and bottom_right coordinates are in pixel space (column, row). 
+For a bounding box producing model, the output is expected to be a single JSON object.
+Note the bounding_boxes_2d array could be extended to contain multiple entries.
+The top_left and bottom_right coordinates are in pixel space (column, row).
 
 For example:
 
 ```json
 { "protocol_version":"1.0",
-  "bounding_boxes_2d": [{ "label": "Lesion #1", 
-                          "SOPInstanceUID": "2.25.336451217722347364678629652826931415692", 
-                          "top_left": [102, 64], 
+  "bounding_boxes_2d": [{ "label": "Lesion #1",
+                          "SOPInstanceUID": "2.25.336451217722347364678629652826931415692",
+                          "top_left": [102, 64],
                           "bottom_right": [118, 74]
                           }]
 }
 ```
 
-##### Classification labels (and other additional information)
+##### Classification labels (and other additional information) {#classification-and-others}
 
 Classification labels or any other information for the study or series of the input, which you want to include in the result,
 can be sent using `study_ml_json` or `series_ml_json` keys.
@@ -137,7 +136,7 @@ For example:
     "series_ml_json": {
       "X.X.X.X": { // SeriesInstanceUID
         "label1": "xxx", // freeform
-      }, 
+      },
    }
 }
 ```
@@ -148,7 +147,7 @@ For a segmentation producing model, the output is expected to be:
 
 * A single JSON object that describes all the segmentations produced
 * One or more binary files that contains each segmentation mask
-  
+
 A sample output of the JSON looks like this:
 
 ```json
@@ -166,9 +165,9 @@ A sample output of the JSON looks like this:
 
 > The `SeriesInstanceUID` object allows identifying the series to which the result applies to.
 
-Note the “parts” array in the JSON above may contain specs for multiple segmentations. 
-In the example above, there’s only one segmentation labelled “Segmentation #1”. 
-For every element in the “parts” array, there should be a corresponding binary buffer. 
+Note the “parts” array in the JSON above may contain specs for multiple segmentations.
+In the example above, there’s only one segmentation labelled “Segmentation #1”.
+For every element in the “parts” array, there should be a corresponding binary buffer.
 
 > The above example is for masks that apply to 3D series. For 2D series you do not need to specify "depth" nor "timepoints"
 
@@ -183,15 +182,15 @@ There are multiple possible interpretations for segmentation masks supported by 
 Depending on what the mask represents you must specify a different value for `binary_type`.
 
 The data format of the segmentation mask binary buffers should respect the following:
- 
-* Each pixel value is expected to be uint8 (0 to 255), not a float. 
+
+* Each pixel value is expected to be uint8 (0 to 255), not a float.
 * The order of the pixels is in column-row-slice, order. So if you start reading the binary file from the beginning, you should see the pixels in the following order: [(col0, row0, slice0), (col1, row0, slice0) ... (col0, row1, slice0), (col1, row1, slice0) ... (col0, row0, slice1), (col1, row0, slice1) ...].
 
 
 ###### Probability mask for 3D Series
 
-To handle probability masks for 3D Series follow the steps for [segmentation masks](#segmentation-masks) 
-and use a `binary_type` of "probability_mask". 
+To handle probability masks for 3D Series follow the steps for [segmentation masks](#segmentation-masks)
+and use a `binary_type` of "probability_mask".
 
 Also, you can optionally add a "probability_threshold" specifying the threshold to show or hide the mask.
 
@@ -261,8 +260,8 @@ The supported palette types are "anchorpoints" and "lut" as shown in the example
 
 ###### Heatmaps for 2D series (e.g. X-Rays)
 
-If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the 
-[segmentation masks](#segmentation-masks) section and [Heatmaps for 3D Series](#heatmaps-for-3d-series) 
+If your model generates a 2D mask, i.e. a mask for a 2D image not a volume of images, then most of the
+[segmentation masks](#segmentation-masks) section and [Heatmaps for 3D Series](#heatmaps-for-3d-series)
 still applies with some modifications.
 
 First, your JSON response should look like this, including `binary_type` = 'heatmap':
@@ -279,8 +278,8 @@ First, your JSON response should look like this, including `binary_type` = 'heat
              },
              "palette": "my_super_palette"
             }],
-  "palettes": { 
-    "my_super_palette": { ... } 
+  "palettes": {
+    "my_super_palette": { ... }
   }
 }
 ```
@@ -293,12 +292,12 @@ See [Heatmaps for 3D Series](#heatmaps-for-3d-series) for an example on how to s
 > Also, `frame_number` is optional. Can be used for multi-frame instances.
 
 You should still return an array of binary buffers apart from the JSON.
-For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing 
+For each input image you should return one item in the `parts` array and one binary buffer (unless there was nothing
 detected for that image).
 
 ###### Numeric label mask for 3D series
 
-If your model creates segmentations for multiple classes/labels which do not overlap then you should follow the guide for 
+If your model creates segmentations for multiple classes/labels which do not overlap then you should follow the guide for
 [segmentation masks](#segmentation-masks) with the following changes:
 
 * The `binary_type` should be `numeric_label_mask`
@@ -373,7 +372,7 @@ For example, to run the container in background, and add access to GPU:
 ./start_server.sh -b -d --gpus=all
 ```
 
-While developing it might also be handy to add a volume with the current directory to speed up the test cycle. 
+While developing it might also be handy to add a volume with the current directory to speed up the test cycle.
 To do this add `-v $(pwd):/opt` at the end of the previous command
 
 #### Adding GPU support
@@ -428,7 +427,7 @@ The default Dockerfile in this repository has the following characteristics:
 
 Developers should modify the Dockerfile to build the software stack that is required to run their models.
 
-While it is not necessary, we recommend using `arterys/inference-sdk-base` as base image repository for your Dockerfile. 
+While it is not necessary, we recommend using `arterys/inference-sdk-base` as base image repository for your Dockerfile.
 There are several tags you can choose from depending on your need of GPU support or not.
 All these images will have the basic dependencies that you need as well as a validated CUDA set up if you need it.
 
@@ -440,14 +439,14 @@ You can choose from the following tags (where `<version_number>` is the version 
 * <version_number>-cuda-10.1
 * <version_number>-cuda-10.2
 
-Check the [arterys/inference-sdk-base](https://hub.docker.com/r/arterys/inference-sdk-base) repository on DockerHub for the latest published version. 
+Check the [arterys/inference-sdk-base](https://hub.docker.com/r/arterys/inference-sdk-base) repository on DockerHub for the latest published version.
 You can also find more information on the [inference-sdk-images](https://github.com/arterys/inference-sdk-images) GitHub repo.
 
 ## Testing the inference server
 
 ### To send an inference request to the mock inference server
 
-The `inference-test-tool/send-inference-request` script allows you to send dicom data to the mock server and exercise it. 
+The `inference-test-tool/send-inference-request` script allows you to send dicom data to the mock server and exercise it.
 To use it run from inside the `inference-test-tool` folder:
 
 ```bash
@@ -465,7 +464,7 @@ The script accepts the following parameters:
 Parameters:
 * `-h`: Print usage help
 * `-s`: Use it if model is a segmentation model
-* `-b`: Use it if model is a bounding box model 
+* `-b`: Use it if model is a bounding box model
 * `-cl`: Use it if model is a classification model
 * `-l`: Use it if you want to generate PNG images with labels plotted on top of them (only applies to classification models)
 * `--host` and `--port`: host and port of inference server
@@ -474,26 +473,26 @@ Parameters:
 * `-S`: If the study size should be send in the request JSON
 * `-c`: If set, overrides the 'inference_command' send in the request
 
-> PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool. 
-You can check if the model's output will be correctly displayed on the Arterys web app. 
+> PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool.
+You can check if the model's output will be correctly displayed on the Arterys web app.
 Classification models allow for free-form json reponses and therefore do not have a single standard of display in the Arterys web app. However, generating
 PNG images for classification models may assist in checking which label was generated by the model for which DICOM.
 
-For example, if you have a study whose dicom files you have placed in the `<ARTERYS_SDK_ROOT>/inference-test-tool/study-folder` 
-folder, you may send this study to your segmentation model listening on port 8900 on the host OS by running the following 
+For example, if you have a study whose dicom files you have placed in the `<ARTERYS_SDK_ROOT>/inference-test-tool/study-folder`
+folder, you may send this study to your segmentation model listening on port 8900 on the host OS by running the following
 command in the `inference-test-tool` directory:
 
 ```bash
 ./send-inference-request.sh -s --host 0.0.0.0 --port 8900 -i ./study-folder/
 ```
 
-For this to work, the folder where you have your DICOM files (`study-folder` in this case) must be a subfolder of 
+For this to work, the folder where you have your DICOM files (`study-folder` in this case) must be a subfolder of
 `inference-test-tool` so that they will be accessible inside the docker container.
 
 #### Sending attachments in the requests to the inference server
 
 If you need additional files to be sent with each request, such as a license file for example, then those files will be sent as multipart files.
-In the `mock_server.py` you will receive a JSON input and a list of files, as usual. 
+In the `mock_server.py` you will receive a JSON input and a list of files, as usual.
 The list of files will include tha attachments at the front followed by the DICOM files to process.
 
 To test this with the test tool you can use the `-a` parameter to add any number of attachments like this:
@@ -520,7 +519,7 @@ If you want to run only one of them, run:
 ```bash
 python3 -m unittest tests/<name_of_file>
 ```
-The tests will start the inference server using the `start_server.sh` script. 
+The tests will start the inference server using the `start_server.sh` script.
 The server must be stopped before running the tests.
 If you want to start the inference server differently then start it before running the tests and define the env variable 'ARTERYS_SDK_ASSUME_SERVER_STARTED=true'.
 
@@ -551,7 +550,7 @@ If your model's output is a secondary capture DICOM file and you want to return 
   "parts": [
       {
           "label": "Mock seg",
-          "binary_type": "dicom_secondary_capture"          
+          "binary_type": "dicom_secondary_capture"
       }
   ]
 }

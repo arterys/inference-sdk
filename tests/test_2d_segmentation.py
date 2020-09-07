@@ -50,13 +50,12 @@ class Test2DSegmentation(MockServerTestCase):
         for index, part in enumerate(data['parts']):
             self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
-            self.assertIn(part['binary_type'], ['heatmap', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
+            self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
                 "'binary_type' is not among the supported mask types")
             if part['binary_type'] == 'dicom_secondary_capture':
                 # The rest of the test does not apply
                 continue
-            elif part['binary_type'] == 'heatmap':
-                self.validate_heatmap_palettes(part, data)
+
             self.assertIn('binary_data_shape', part)
             data_shape = part['binary_data_shape']
             self.assertIsInstance(data_shape['width'], int)
@@ -66,5 +65,10 @@ class Test2DSegmentation(MockServerTestCase):
 
             mask = np.fromfile(os.path.join(self.inference_test_dir, self.output_dir, "output_masks_{}.npy".format(index + 1)), dtype=np.uint8)
             self.assertEqual(mask.shape[0], data_shape['width'] * data_shape['height'])
+
+            if part['binary_type'] == 'heatmap':
+                self.validate_heatmap_palettes(part, data)
+            elif part['binary_type'] == 'numeric_label_mask':
+                self.validate_numeric_label_mask(part, mask)
 
         print(term_colors.OKGREEN + "2D segmentation test succeeded!!", term_colors.ENDC)

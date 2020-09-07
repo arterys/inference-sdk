@@ -69,15 +69,6 @@ class Test3DSegmentation(MockServerTestCase):
             if part['binary_type'] == 'heatmap':
                 self.validate_heatmap_palettes(part, data)
             elif part['binary_type'] == 'numeric_label_mask':
-                self.assertIn('label_map', part, "A numeric label mask must have a 'label_map' object.")
-                label_map = part['label_map']
-                labels = label_map.keys()
-                for l in labels:
-                    self.assertTrue(l.isdigit(), "The keys in the 'label_map' must be ints.")
-                int_labels = [int(l) for l in labels]
-                self.assertLessEqual(mask.max(), max(int_labels), "There are values in the mask which have\
-                     no associated label from the 'label_map'.")
-                str_labels = label_map.values()
-                self.assertEqual(len(set(str_labels)), len(str_labels), "The values in 'label_map' must be unique.")
+                self.validate_numeric_label_mask(part, mask)
 
         print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)
