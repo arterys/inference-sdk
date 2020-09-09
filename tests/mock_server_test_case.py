@@ -113,3 +113,15 @@ class MockServerTestCase(unittest.TestCase):
                     self.assertLessEqual(max(ap["color"]), 255, "Color values must be between 0 and 255")
                 self.assertEqual(palette['data'][0]["threshold"], 0.0, "The first anchorpoint must start at 0.0")
                 self.assertEqual(palette['data'][-1]["threshold"], 1.0, "The last anchorpoint must end at 1.0")
+
+    def validate_numeric_label_mask(self, part, mask):
+        self.assertIn('label_map', part, "A numeric label mask must have a 'label_map' object.")
+        label_map = part['label_map']
+        labels = label_map.keys()
+        for l in labels:
+            self.assertTrue(l.isdigit(), "The keys in the 'label_map' must be ints.")
+        int_labels = [int(l) for l in labels]
+        self.assertLessEqual(mask.max(), max(int_labels), "There are values in the mask which have\
+                no associated label from the 'label_map'.")
+        str_labels = label_map.values()
+        self.assertEqual(len(set(str_labels)), len(str_labels), "The values in 'label_map' must be unique.")
