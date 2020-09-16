@@ -11,7 +11,7 @@ The SDK helps you containerize your model into a Flask app with a predefined API
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
       - [Bounding box](#bounding-box)
-      - [Classification labels (and other additional information)](#classification-and-others)
+      - [Classification labels (and other additional information)](#classification-labels-and-other-additional-information)
       - [Segmentation masks](#segmentation-masks)
       - [Linear measurements](#linear-measurements)
     - [Request JSON format](#request-json-format)
@@ -117,7 +117,7 @@ For example:
 }
 ```
 
-##### Classification labels (and other additional information) {#classification-and-others}
+##### Classification labels (and other additional information)
 
 Classification labels or any other information for the study or series of the input, which you want to include in the result,
 can be sent using `study_ml_json` or `series_ml_json` keys.
@@ -247,16 +247,12 @@ Optionally you can specify custom color palettes and assign them to specific par
         { "threshold": 0.0, "color": [0, 0, 0, 0] },
         { "threshold": 1.0, "color": [255, 0, 0, 255] }
       ]
-    },
-    "my_other_palette": {
-      "type": "lut",
-      "data": [ ... ] // array of 1024 8-bit numbers
     }
   }
 }
 ```
 
-The supported palette types are "anchorpoints" and "lut" as shown in the example above.
+Currently, the only supported palette type is "anchorpoints" as shown in the example above.
 
 ###### Heatmaps for 2D series (e.g. X-Rays)
 

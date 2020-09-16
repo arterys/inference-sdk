@@ -204,7 +204,7 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
                 lut = create_lut_from_anchorpoints(palette['data'])
                 heatmap = apply_lut(image_mask, lut)
             else:
-                heatmap = apply_lut(image_mask, palette['data'])
+                raise NotImplementedError(f"Palette type {palette['type']} is not implemented. Use 'anchorpoints'")
         else:
             heatmap = apply_lut(image_mask, None)
         heatmap = np.reshape(heatmap, [-1, 4])
