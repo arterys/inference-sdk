@@ -25,7 +25,7 @@ The SDK helps you containerize your model into a Flask app with a predefined API
   - [Running Unit Tests](#running-unit-tests)
 - [Nifti image format support](#nifti-image-format-support)
 - [Secondary capture support](#secondary-capture-support)
-
+- [DICOM structured report](#dicom-structured-report)
 ## Integrating the SDK
 
 You should use this SDK to allow the Arterys web app to invoke your model.
@@ -546,8 +546,16 @@ If your model's output is a secondary capture DICOM file and you want to return 
   "parts": [
       {
           "label": "Mock seg",
-          "binary_type": "dicom_secondary_capture"
+          "binary_type": "dicom_secondary_capture",
+          "SeriesInstanceUID": "X.X.X.X"
       }
   ]
 }
 ```
+
+You should return the secondary capture as a byte stream in your handler.
+For an example, the `write_dataset_to_bytes` function on [this Pydicom help page](https://pydicom.github.io/pydicom/stable/auto_examples/memory_dataset.html) might be helpful.
+
+## DICOM structured report
+
+If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the precious section, just change `'binary_type'` to `'dicom'`.

@@ -12,6 +12,8 @@ import pydicom
 from utils import load_image_data, sort_images, create_folder, get_pixels
 import cv2
 
+DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom'}
+
 colors = [[1, 0, 0],
         [0, 1, 0],
         [0, 0, 1],
@@ -86,8 +88,8 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     create_folder(output_folder)
 
     # Filter out secondary capture outputs
-    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] != 'dicom_secondary_capture']
-    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] == 'dicom_secondary_capture']
+    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] not in DICOM_BINARY_TYPES]
+    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] in DICOM_BINARY_TYPES]
     masks = np.array(masks)
     secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)
     secondary_captures = masks[secondary_capture_indexes_bool]
@@ -147,8 +149,8 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
     create_folder(output_folder)
 
     # Filter out secondary capture outputs
-    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] != 'dicom_secondary_capture']
-    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] == 'dicom_secondary_capture']
+    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] not in  DICOM_BINARY_TYPES]
+    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] in DICOM_BINARY_TYPES]
     masks = np.array(masks)
     secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)
     secondary_captures = masks[secondary_capture_indexes_bool]
