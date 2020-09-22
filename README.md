@@ -11,7 +11,7 @@ The SDK helps you containerize your model into a Flask app with a predefined API
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
       - [Bounding box](#bounding-box)
-      - [Classification labels (and other additional information)](#classification-and-others)
+      - [Classification labels (and other additional information)](#classification-labels-and-other-additional-information)
       - [Segmentation masks](#segmentation-masks)
       - [Linear measurements](#linear-measurements)
     - [Request JSON format](#request-json-format)
@@ -25,7 +25,7 @@ The SDK helps you containerize your model into a Flask app with a predefined API
   - [Running Unit Tests](#running-unit-tests)
 - [Nifti image format support](#nifti-image-format-support)
 - [Secondary capture support](#secondary-capture-support)
-
+- [DICOM structured report](#dicom-structured-report)
 ## Integrating the SDK
 
 You should use this SDK to allow the Arterys web app to invoke your model.
@@ -117,7 +117,7 @@ For example:
 }
 ```
 
-##### Classification labels (and other additional information) {#classification-and-others}
+##### Classification labels (and other additional information)
 
 Classification labels or any other information for the study or series of the input, which you want to include in the result,
 can be sent using `study_ml_json` or `series_ml_json` keys.
@@ -247,16 +247,12 @@ Optionally you can specify custom color palettes and assign them to specific par
         { "threshold": 0.0, "color": [0, 0, 0, 0] },
         { "threshold": 1.0, "color": [255, 0, 0, 255] }
       ]
-    },
-    "my_other_palette": {
-      "type": "lut",
-      "data": [ ... ] // array of 1024 8-bit numbers
     }
   }
 }
 ```
 
-The supported palette types are "anchorpoints" and "lut" as shown in the example above.
+Currently, the only supported palette type is "anchorpoints" as shown in the example above.
 
 ###### Heatmaps for 2D series (e.g. X-Rays)
 
@@ -550,8 +546,16 @@ If your model's output is a secondary capture DICOM file and you want to return 
   "parts": [
       {
           "label": "Mock seg",
-          "binary_type": "dicom_secondary_capture"
+          "binary_type": "dicom_secondary_capture",
+          "SeriesInstanceUID": "X.X.X.X"
       }
   ]
 }
 ```
+
+You should return the secondary capture as a byte stream in your handler.
+For an example, the `write_dataset_to_bytes` function on [this Pydicom help page](https://pydicom.github.io/pydicom/stable/auto_examples/memory_dataset.html) might be helpful.
+
+## DICOM structured report
+
+If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the precious section, just change `'binary_type'` to `'dicom'`.

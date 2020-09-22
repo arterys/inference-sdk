@@ -51,7 +51,7 @@ class Test3DSegmentation(MockServerTestCase):
             self.assertIsInstance(part['binary_type'], str)
             self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
                 "'binary_type' is not among the supported mask types")
-            if part['binary_type'] == 'dicom_secondary_capture':
+            if part['binary_type'] == 'dicom_secondary_capture' or part['binary_type'] == 'dicom':
                 # The rest of the test does not apply
                 continue
 
