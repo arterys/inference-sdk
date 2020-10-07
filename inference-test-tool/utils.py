@@ -1,5 +1,6 @@
 import os
 import tempfile
+import itertools
 from operator import attrgetter
 from functools import cmp_to_key
 from pathlib import Path
@@ -13,10 +14,11 @@ from PIL import Image
 class DCM_Image:
     def __init__(self, dcm, path):
         self.instanceUID = dcm.SOPInstanceUID
+        self.seriesUID = dcm.SeriesInstanceUID
         self.position = dcm.ImagePositionPatient if 'ImagePositionPatient' in dcm else None
         self.orientation = dcm.ImageOrientationPatient if 'ImageOrientationPatient' in dcm else None
         self.instance_number = dcm.InstanceNumber if 'InstanceNumber' in dcm else None
-        self.timepoint = None      
+        self.timepoint = None
         self.path = path
 
     def direction(self):
@@ -76,6 +78,15 @@ def load_image_data(folder):
 
 
 def sort_images(images):
+    series_attr = attrgetter('seriesUID')
+    images_by_series = [list(g) for k, g in itertools.groupby(sorted(images, key=series_attr), series_attr)]
+    result = []
+    for series in images_by_series:
+        sorted_images = _sort_series_images(series)
+        result.extend(sorted_images)
+    return result
+
+def _sort_series_images(images):
     pos = images[0].position
     direction = images[0].direction()
     if pos is None or direction is None:
@@ -83,12 +94,12 @@ def sort_images(images):
 
     spatial_sorted = sorted(images, key=cmp_to_key(lambda item1, item2: np.dot(np.subtract(np.array(item1.position), np.array(pos)), direction) -
         np.dot(np.subtract(np.array(item2.position), np.array(pos)), direction)))
-    
+
     timepoints = determine_timepoints(spatial_sorted)
     if timepoints == 1:
         return spatial_sorted
 
-    images_per_timepoint = int(len(spatial_sorted) / timepoints)    
+    images_per_timepoint = int(len(spatial_sorted) / timepoints)
     assert len(spatial_sorted) % timepoints == 0, "Series instances {} must be a multiple of timepoints {}" \
         .format(len(spatial_sorted), timepoints)
 
@@ -119,7 +130,7 @@ def get_pixels(dicom_file):
     elif dicom_file.PhotometricInterpretation == 'YBR_FULL_422' or dicom_file.PhotometricInterpretation == 'YBR_FULL':
         pixels = convert_color_space(pixels, dicom_file.PhotometricInterpretation, 'RGB')
         dicom_file.PhotometricInterpretation = 'RGB'
-    elif len(pixels.shape) == 2 and (dicom_file.PhotometricInterpretation == 'MONOCHROME1' 
+    elif len(pixels.shape) == 2 and (dicom_file.PhotometricInterpretation == 'MONOCHROME1'
         or dicom_file.PhotometricInterpretation == 'MONOCHROME2'):
         pixels = np.stack((pixels, pixels, pixels), axis=2)
 
