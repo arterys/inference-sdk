@@ -5,11 +5,11 @@ import numpy as np
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors
 
-class Test3DSegmentation(MockServerTestCase):
-    input_dir = 'test_3d/'
-    output_dir = 'test_3d_out/'
+class TestSecondaryCapture(MockServerTestCase):
+    input_dir = 'test_secondary_capture/'
+    output_dir = 'test_secondary_capture_out/'
     command = '-s3D'
-    test_name = '3D segmentation test'
+    test_name = 'Secondary catpure test'
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
@@ -40,13 +40,12 @@ class Test3DSegmentation(MockServerTestCase):
         secondary_capture_parts = [p for p in data["parts"] if p['binary_type'] == 'dicom_secondary_capture']
         self.assertEqual(count_masks, len(secondary_capture_parts))
 
-        # for index, part in enumerate(data['parts']):
-        #     self.assertIsInstance(part['binary_type'], str)
-        #     self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
-        #         "'binary_type' is not among the supported mask types")
-        #     if part['binary_type'] == 'dicom_secondary_capture' or part['binary_type'] == 'dicom':
-        #         # The rest of the test does not apply
-        #         continue
-
+        # Read and verify output secondary capture dicom files
+        for index, sc in enumerate(secondary_capture_parts):
+            file_path = os.path.join(output_folder_path, 'sc_' + str(index) + '.dcm')
+            try:
+                dcm = pydicom.dcmread(file_path)
+            except InvalidDicomError:
+                self.fail("output dcm file is invalid!")
 
         print(term_colors.OKGREEN + "Secondary capture test succeeded!!", term_colors.ENDC)
