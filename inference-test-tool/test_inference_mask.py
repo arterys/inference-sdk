@@ -102,6 +102,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
         pydicom.dcmwrite(file_path, dcm)
 
     offset = 0
+
     for index, image in enumerate(images):
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
@@ -149,7 +150,7 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
     create_folder(output_folder)
 
     # Filter out secondary capture outputs
-    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] not in  DICOM_BINARY_TYPES]
+    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] not in DICOM_BINARY_TYPES]
     secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] in DICOM_BINARY_TYPES]
     masks = np.array(masks)
     secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)

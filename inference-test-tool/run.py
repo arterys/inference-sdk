@@ -133,8 +133,9 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
             identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
             filtered_images = []
             for id in identifiers:
-                image = next((img for img in images if img.instanceUID == id))
-                filtered_images.append(image)
+                image = next((img for img in images if img.instanceUID == id), None)
+                if image:
+                    filtered_images.append(image)
             test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
         else:
             test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
