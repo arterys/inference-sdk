@@ -26,6 +26,9 @@ The SDK helps you containerize your model into a Flask app with a predefined API
 - [Nifti image format support](#nifti-image-format-support)
 - [Secondary capture support](#secondary-capture-support)
 - [DICOM structured report](#dicom-structured-report)
+- [Returning DICOM conformance errors](#returning-dicom-conformance-errors)
+
+
 ## Integrating the SDK
 
 You should use this SDK to allow the Arterys web app to invoke your model.
@@ -559,3 +562,44 @@ For an example, the `write_dataset_to_bytes` function on [this Pydicom help page
 ## DICOM structured report
 
 If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the precious section, just change `'binary_type'` to `'dicom'`.
+
+## Returning DICOM conformance errors
+
+If you run validations on the input DICOM data to check whether it is compliant with the requirements of your model, you can return the results of these validations with or without results from your model.
+
+For each validation you can return a description and whether it is compliant or not.
+Validations can be `mandatory` or `recommended`.
+If a `mandatory` validation fails then the results will not be presented to the users.
+If a `recommended` validation fails then the results will be presented with an informative warning:
+
+
+```jsonc
+{
+  "protocol_version": "1.0",
+  "parts": [
+      {
+          "label": "Mock seg",
+          "binary_type": "dicom_secondary_capture",
+          "SeriesInstanceUID": "X.X.X.X",
+          "dicomConformance": {
+            // Optional
+            "mandatory": [
+                {
+                    "description": "Patient age > 18",
+                    "compliant": true
+                },
+                ...
+            ],
+            // Optional
+            "recommended": [
+                {
+                    "description": "FoV above 170mm",
+                    "compliant": false
+                },
+                ...
+            ]
+        }
+      }
+  ]
+}
+```
