@@ -10,10 +10,6 @@ The SDK helps you containerize your model into a Flask app with a predefined API
   - [The healthcheck endpoint](#the-healthcheck-endpoint)
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
-      - [Bounding box](#bounding-box)
-      - [Classification labels (and other additional information)](#classification-labels-and-other-additional-information)
-      - [Segmentation masks](#segmentation-masks)
-      - [Linear measurements](#linear-measurements)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
     - [Adding GPU support](#adding-gpu-support)
@@ -24,8 +20,8 @@ The SDK helps you containerize your model into a Flask app with a predefined API
     - [Sending attachments in the requests to the inference server](#sending-attachments-in-the-requests-to-the-inference-server)
   - [Running Unit Tests](#running-unit-tests)
 - [Nifti image format support](#nifti-image-format-support)
-- [Secondary capture support](#secondary-capture-support)
-- [DICOM structured report](#dicom-structured-report)
+
+
 ## Integrating the SDK
 
 You should use this SDK to allow the Arterys web app to invoke your model.
@@ -339,6 +335,62 @@ If your model outputs linear measurements you can send those results in this for
 }
 ```
 
+
+##### Secondary capture support
+
+If your model's output is a secondary capture DICOM file and you want to return that as result then you have to specify `"binary_type": "dicom_secondary_capture"` in the corresponding `parts` object. Your response could look like this:
+
+```json
+{
+  "protocol_version": "1.0",
+  "parts": [
+      {
+          "label": "Mock seg",
+          "binary_type": "dicom_secondary_capture",
+          "SeriesInstanceUID": "X.X.X.X"
+      }
+  ]
+}
+```
+
+You should return the secondary capture as a byte stream in your handler.
+For an example, the `write_dataset_to_bytes` function on [this Pydicom help page](https://pydicom.github.io/pydicom/stable/auto_examples/memory_dataset.html) might be helpful.
+
+##### DICOM structured report
+
+If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the previous section, just change `'binary_type'` to `'dicom'`.
+
+##### Returning DICOM conformance errors
+
+If you run validations on the input DICOM data to check whether it is compliant with the requirements of your model, you can return the results of these validations with the results from your model.
+This is useful if the results you return are sub-optimal for certain reason.
+
+For each validation you can return a description and whether it is compliant or not.
+If a `recommended` validation fails then the results will be presented with an informative warning:
+
+
+```jsonc
+{
+  "protocol_version": "1.0",
+  "parts": [
+      {
+          "label": "Mock seg",
+          "binary_type": "dicom_secondary_capture",
+          "SeriesInstanceUID": "X.X.X.X",
+          "dicomConformance": {
+            "recommended": [
+                {
+                    "description": "FoV above 170mm",
+                    "compliant": false
+                },
+                ...
+            ]
+        }
+      }
+  ]
+}
+```
+
 #### Request JSON format
 
 Currently the request JSON will not have any meaningful information for you.
@@ -535,27 +587,3 @@ ARTERYS_TESTS_ADDITIONAL_FLAGS="-S -a attachment1.txt"
 In the `utils/image_conversion.py` there are a few functions that can be helpful if your model accepts Nifti files as input or generates Nifti output files.
 
 To convert Dicom files to Nifti use `convert_to_nifti`. If you want to load a segmenation mask from a Nifti file you can use `get_masks_from_nifti_file`.
-
-## Secondary capture support
-
-If your model's output is a secondary capture DICOM file and you want to return that as result then you have to specify `"binary_type": "dicom_secondary_capture"` in the corresponding `parts` object. Your response could look like this:
-
-```json
-{
-  "protocol_version": "1.0",
-  "parts": [
-      {
-          "label": "Mock seg",
-          "binary_type": "dicom_secondary_capture",
-          "SeriesInstanceUID": "X.X.X.X"
-      }
-  ]
-}
-```
-
-You should return the secondary capture as a byte stream in your handler.
-For an example, the `write_dataset_to_bytes` function on [this Pydicom help page](https://pydicom.github.io/pydicom/stable/auto_examples/memory_dataset.html) might be helpful.
-
-## DICOM structured report
-
-If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the precious section, just change `'binary_type'` to `'dicom'`.
