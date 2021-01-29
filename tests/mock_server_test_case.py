@@ -70,12 +70,6 @@ class MockServerTestCase(unittest.TestCase):
             raise Exception("Service didn't start in time")
 
     def stop_service(self, print_output=False):
-        print(term_colors.FAIL + "Dumping Docker logs before stopping service:", term_colors.ENDC)
-        completed_process = subprocess.run(["docker", "log", self.test_container_name],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(completed_process.stdout)
-        print(compelted_process.stderr)
-
         if self.server_proc is not None:
             subprocess.run(["docker", "stop", self.test_container_name],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
