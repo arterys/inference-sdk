@@ -71,11 +71,10 @@ class MockServerTestCase(unittest.TestCase):
 
     def stop_service(self, print_output=False):
         print(term_colors.FAIL + "Dumping Docker logs before stopping service:", term_colors.ENDC)
-        docker_logs = subprocess.run(["docker", "log", self.test_container_name],
+        completed_process = subprocess.run(["docker", "log", self.test_container_name],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = docker_logs.communicate()
-        print(err)
-        print(out)
+        print(completed_process.stdout)
+        print(compelted_process.stderr)
 
         if self.server_proc is not None:
             subprocess.run(["docker", "stop", self.test_container_name],
