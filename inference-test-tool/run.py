@@ -33,7 +33,7 @@ BOUNDING_BOX = "BOUNDING_BOX"
 CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -61,7 +61,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         inference_command = override_inference_command
 
     request_json = {'request': 'post',
-                    'route': '/',
+                    'route': route,
                     'inference_command': inference_command}
 
     count = 0
@@ -101,7 +101,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     boundary = me.content_type.split('boundary=')[1]
     headers['Content-Type'] = headers['Content-Type'] + 'boundary="{}"'.format(boundary)
 
-    r = requests.post('http://' + host + ':' + port + '/', data=me, headers=headers)
+    r = requests.post('http://' + host + ':' + port + route, data=me, headers=headers)
 
     if r.status_code != 200:
         print("Got error status code ", r.status_code)
@@ -175,6 +175,7 @@ def parse_args():
     parser.add_argument("-S", "--send_study_size", default=False, help="If the study size should be send in the request JSON",
         action='store_true')
     parser.add_argument("-c", "--inference_command", default=None, help="If set, overrides the 'inference_command' send in the request")
+    parser.add_argument("-r", "--route", default='/', help="If set, the inference command is directed to the given route. Defaults to '/' route.")
     args = parser.parse_args()
 
     return args
@@ -189,4 +190,4 @@ if __name__ == '__main__':
         model_type = CLASSIFICATION_MODEL
     else:
         model_type = OTHER
-    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size, args.include_label_plots)
+    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size, args.include_label_plots, args.route)

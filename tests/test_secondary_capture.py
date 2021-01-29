@@ -15,8 +15,8 @@ class TestSecondaryCapture(MockServerTestCase):
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
-        result = subprocess.run(['./send-inference-request.sh', '-s', '--host', '0.0.0.0', '-p',
-            self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
+        result = subprocess.run(['./send-inference-request.sh', '--segmentation_model', '--host=0.0.0.0', '--port=' +
+            self.inference_port, '--output=' + self.output_dir, '--input' + self.input_dir] + self.additional_flags.split(),
             cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
 
         # Test that the command executed successfully
