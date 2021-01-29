@@ -101,7 +101,9 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     boundary = me.content_type.split('boundary=')[1]
     headers['Content-Type'] = headers['Content-Type'] + 'boundary="{}"'.format(boundary)
 
-    r = requests.post('http://' + host + ':' + port + route, data=me, headers=headers)
+    target = 'http://' + host + ':' + port + route
+    print('Targeting inference request to: {}'.format(target))
+    r = requests.post(target, data=me, headers=headers)
 
     if r.status_code != 200:
         print("Got error status code ", r.status_code)

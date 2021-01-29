@@ -54,12 +54,15 @@ class MockServerTestCase(unittest.TestCase):
         for i in range(240):
             try:
                 if method == "GET":
+                    print("Checking service up with GET at port " + port)
                     response = requests.get("http://localhost:{}/healthcheck".format(port))
                 else:
+                    print("Checking service up with POST at port " + port)
                     response = requests.post("http://localhost:{}/healthcheck".format(port))
             except requests.exceptions.ConnectionError:
                 pass
             else:
+                print("Service is up!")
                 return response
             time.sleep(1)
         else:
