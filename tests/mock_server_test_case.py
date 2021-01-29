@@ -71,6 +71,13 @@ class MockServerTestCase(unittest.TestCase):
 
     def stop_service(self, print_output=False):
         if self.server_proc is not None:
+            docker_logs = subprocess.run(["docker", "log", self.test_container_name],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = docker_logs.communicate()
+            print(term_colors.FAIL + "Docker logs:", term_colors.ENDC)
+            print(err)
+            print(out)
+
             subprocess.run(["docker", "stop", self.test_container_name],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.server_proc.terminate()
@@ -88,6 +95,7 @@ class MockServerTestCase(unittest.TestCase):
             print(result.stderr)
             print(term_colors.FAIL + "And stdout:", term_colors.ENDC)
             print(result.stdout)
+            print('Stopping service due to failure...')
             self.stop_service(True)
 
     def validate_heatmap_palettes(self, part, response):
