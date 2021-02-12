@@ -9,10 +9,8 @@ from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
-from utils import load_image_data, sort_images, create_folder, get_pixels
+from utils import load_image_data, sort_images, create_folder, get_pixels, group_by_series, filter_masks_by_binary_type, filter_mask_parts
 import cv2
-
-DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom'}
 
 colors = [[1, 0, 0],
         [0, 1, 0],
@@ -88,12 +86,8 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     create_folder(output_folder)
 
     # Filter out secondary capture outputs
-    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] not in DICOM_BINARY_TYPES]
-    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] in DICOM_BINARY_TYPES]
-    masks = np.array(masks)
-    secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)
-    secondary_captures = masks[secondary_capture_indexes_bool]
-    non_sc_masks = masks[~secondary_capture_indexes_bool]
+    all_mask_parts = filter_mask_parts(response_json)
+    binary_masks, secondary_captures = filter_masks_by_binary_type(masks, all_mask_parts, response_json)
 
     # Create DICOM files for secondary capture outputs
     for index, sc in enumerate(secondary_captures):
@@ -103,35 +97,40 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
 
     offset = 0
 
-    for index, image in enumerate(images):
-        dcm = pydicom.dcmread(image.path)
-        pixels = get_pixels(dcm)
+    images_by_series = group_by_series(images)
+    series = images_by_series.keys()
 
-        # Reshape and add alpha
-        pixels = np.reshape(pixels, (-1, 3))
-        pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
+    for serie in series:
+        offset = 0
+        for index, image in enumerate(images_by_series[serie]):
+            dcm = pydicom.dcmread(image.path)
+            pixels = get_pixels(dcm)
 
-        for mask_index, (mask, json_part) in enumerate(zip(non_sc_masks, all_mask_parts)):
-            # If the input holds multiple timepoints but the result only includes 1 timepoint
-            if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
-                continue
-            # get mask for this image
-            image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
-            pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
-
-        offset += dcm.Rows * dcm.Columns
-
-        # write image to output folder
-        output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
-        output_filename += '.png'
-
-        if pixels.shape[1] != 4:
+            # Reshape and add alpha
+            pixels = np.reshape(pixels, (-1, 3))
             pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
-        pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
-        plt.imsave(output_filename, pixels)
 
-    for mask_index, mask in enumerate(non_sc_masks):
-        assert mask.shape[0] <= offset, "Mask {} does not have the same size ({}) as the volume ({})".format(mask_index, mask.shape[0], offset)
+            for mask_index, (mask, json_part) in enumerate(zip(binary_masks, all_mask_parts)):
+                # If the input holds multiple timepoints but the result only includes 1 timepoint
+                if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
+                    continue
+                if json_part['SeriesInstanceUID'] != serie:
+                    continue
+                # get mask for this image
+                image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
+                pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
+
+            offset += dcm.Rows * dcm.Columns
+
+            # write image to output folder
+            output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
+            output_filename += '.png'
+
+            if pixels.shape[1] != 4:
+                pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
+            pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
+            plt.imsave(output_filename, pixels)
+
 
 def generate_images_for_single_image_masks(dicom_images, inference_results, response_json, output_folder):
     """ This function will save images to disk to preview how a mask looks on the input images.
@@ -150,12 +149,8 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
     create_folder(output_folder)
 
     # Filter out secondary capture outputs
-    all_mask_parts = [p for p in response_json["parts"] if p['binary_type'] not in DICOM_BINARY_TYPES]
-    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] in DICOM_BINARY_TYPES]
-    masks = np.array(masks)
-    secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)
-    secondary_captures = masks[secondary_capture_indexes_bool]
-    non_sc_masks = masks[~secondary_capture_indexes_bool]
+    all_mask_parts = filter_mask_parts(response_json)
+    binary_masks, secondary_captures = filter_masks_by_binary_type(masks, all_mask_parts, response_json)
 
     # Create DICOM files for secondary capture outputs
     for index, sc in enumerate(secondary_captures):
@@ -163,7 +158,7 @@ def generate_images_for_single_image_masks(dicom_images, inference_results, resp
         file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
         pydicom.dcmwrite(file_path, dcm)
 
-    for index, (image, mask, json_part) in enumerate(zip(images, non_sc_masks, all_mask_parts)):
+    for index, (image, mask, json_part) in enumerate(zip(images, binary_masks, all_mask_parts)):
         dcm = pydicom.dcmread(image.path)
         pixels = get_pixels(dcm)
 
