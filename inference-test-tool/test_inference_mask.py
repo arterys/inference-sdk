@@ -114,7 +114,8 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                 # If the input holds multiple timepoints but the result only includes 1 timepoint
                 if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
                     continue
-                if json_part['SeriesInstanceUID'] != serie:
+                if ('SeriesInstanceUID' in json_part) and json_part['SeriesInstanceUID'] != serie:
+                    # This mask does not apply to this series
                     continue
                 # get mask for this image
                 image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
