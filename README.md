@@ -25,7 +25,8 @@ The SDK helps you containerize your model into a Flask app with a predefined API
 ## Integrating the SDK
 
 You should use this SDK to allow the Arterys web app to invoke your model.
-The `gateway.py` is a helper class that creates a Flask server to communicate with the Arterys app via HTTP.
+You will find the files needed for the integration in the `src` folder.
+The `src/gateway.py` is a helper class that creates a Flask server to communicate with the Arterys app via HTTP.
 
 You will have to provide 2 endpoints:
 
@@ -39,7 +40,7 @@ You should handle healthcheck requests by returning a string 'READY' if your ser
 Otherwise return something else, with status code 200 in both cases.
 Returning "READY" too early will result in failures due to requests being sent too early.
 
-You can do this by modifying the `healthcheck_handler` function in `mock_server.py`
+You can do this by modifying the `healthcheck_handler` function in `src/mock_server.py`
 
 ### Handling an inference request
 
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True, use_reloader=True)
 ```
 
-See mock_server.py, for more examples of handlers that respond with different types of annotations.
+See `mock_server.py`, for more examples of handlers that respond with different types of annotations.
 
 > You will normally not need to change `gateway.py`.
 However, you will have to **parse the request, call your model and return a response** in the `mock_server.py`
@@ -401,6 +402,7 @@ This would need custom work from the Arterys support team.
 
 ```bash
 # Start the service.
+cd src/
 ./start_server.sh <command>
 
 # View the logs
