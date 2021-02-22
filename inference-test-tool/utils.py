@@ -11,6 +11,8 @@ import numpy as np
 import SimpleITK as sitk
 from PIL import Image
 
+DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom'}
+
 class DCM_Image:
     def __init__(self, dcm, path):
         self.instanceUID = dcm.SOPInstanceUID
@@ -78,13 +80,17 @@ def load_image_data(folder):
 
 
 def sort_images(images):
-    series_attr = attrgetter('seriesUID')
-    images_by_series = [list(g) for k, g in itertools.groupby(sorted(images, key=series_attr), series_attr)]
+    images_by_series = group_by_series(images)
     result = []
-    for series in images_by_series:
+    for series in images_by_series.values():
         sorted_images = _sort_series_images(series)
         result.extend(sorted_images)
     return result
+
+def group_by_series(images):
+    series_attr = attrgetter('seriesUID')
+    return {k: list(g) for k, g in itertools.groupby(sorted(images, key=series_attr), series_attr)}
+
 
 def _sort_series_images(images):
     pos = images[0].position
@@ -113,6 +119,19 @@ def _sort_series_images(images):
             image.timepoint = t
             result.append(image)
     return result
+
+def filter_mask_parts(response_json):
+    return [p for p in response_json["parts"] if p['binary_type'] not in DICOM_BINARY_TYPES]
+
+def filter_masks_by_binary_type(masks, all_mask_parts, response_json):
+    # Filters the output masks into binary masks vs dicom data such as SC
+    # Returns a tuple of two lists: ([binary masks], [dicom data])
+    secondary_capture_indexes = [i for (i,p) in enumerate(response_json["parts"]) if p['binary_type'] in DICOM_BINARY_TYPES]
+    masks = np.array(masks)
+    secondary_capture_indexes_bool = np.in1d(range(masks.shape[0]), secondary_capture_indexes)
+    secondary_captures = masks[secondary_capture_indexes_bool]
+    binary_masks = masks[~secondary_capture_indexes_bool]
+    return (binary_masks, secondary_captures)
 
 def determine_timepoints(images):
     # Supposing images are sorted by position

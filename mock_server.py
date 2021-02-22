@@ -57,11 +57,11 @@ def get_classification_response(json_input, dicom_instances):
                 'value': '0.9',
                 'nested_labels': {
                     'condition1': '0.9',
-                    'condition2': '0.2', 
+                    'condition2': '0.2',
                     'condition3': '0.22'
                 }
             }
-        }, 
+        },
         'study_ml_json': {
             'label1': 'condition1',
             'label2': 'condition2'
@@ -102,7 +102,8 @@ def get_probability_mask_3D_response(json_input, dicom_instances):
                     'depth': depth,
                     'width': image_width,
                     'height': image_height
-                }
+                },
+                'SeriesInstanceUID': dcm.SeriesInstanceUID
             }
         ]
     }
@@ -198,7 +199,7 @@ def parse_args():
     group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
     group.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
-        action='store_true')  
+        action='store_true')
     args = parser.parse_args()
 
     return args
