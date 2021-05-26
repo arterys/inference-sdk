@@ -8,6 +8,7 @@ from io import BytesIO
 import json
 import logging
 import hashlib
+import numpy
 
 import flask
 from flask import Flask, make_response
@@ -161,7 +162,7 @@ class Gateway(Flask):
         output_hash.update(json.dumps(response_json_body).encode('utf-8'))
 
         for part in response_binary_elements:
-            output_hash.update(part)
+            output_hash.update(numpy.ascontiguousarray(part))
 
         output_digest = output_hash.hexdigest()
 
