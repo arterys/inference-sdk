@@ -34,7 +34,7 @@ CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
 OTHER = "OTHER"
 ICAD = "ICAD"
 
-def upload_study_me(file_path=None, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
+def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
