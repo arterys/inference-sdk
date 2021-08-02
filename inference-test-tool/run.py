@@ -36,7 +36,7 @@ ICAD = "ICAD"
 
 def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
     file_dict = []
-    headers = {'Content-Type': 'multipart/related; '}
+    # headers = {'Content-Type': 'multipart/related; '}
 
     images = []
     if file_path:
@@ -98,21 +98,18 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
             print('File {} is not a DICOM file'.format(image.path))
             continue
 
-    print('Sending {} files...'.format(len(images)))
-    if send_study_size:
-        request_json['depth'] = count
-        request_json['height'] = height
-        request_json['width'] = width
+    # print('Sending {} files...'.format(len(images)))
+    # if send_study_size:
+    #     request_json['depth'] = count
+    #     request_json['height'] = height
+    #     request_json['width'] = width
 
-    file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
-
-    me = MultipartEncoder(fields=file_dict)
-    boundary = me.content_type.split('boundary=')[1]
-    headers['Content-Type'] = headers['Content-Type'] + 'boundary="{}"'.format(boundary)
+    data = json.dumps(request_json).encode('utf-8')
+    headers = {'Content-Type': 'application/json'}
 
     target = 'http://' + host + ':' + port + route
     print('Targeting inference request to: {}'.format(target))
-    r = requests.post(target, data=me, headers=headers)
+    r = requests.post(target, data, headers)
 
     if r.status_code != 200:
         print("Got error status code ", r.status_code)
@@ -137,24 +134,28 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
             "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
             .format(len(multipart_data.parts) - non_buffer_count, mask_count)
 
-        masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
+        dicom_outputs = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
+        #
+        # if images[0].position is None:
+        #     # We must sort the images by their instance UID based on the order of the response:
+        #     identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
+        #     filtered_images = []
+        #     for id in identifiers:
+        #         image = next((img for img in images if img.instanceUID == id), None)
+        #         if image:
+        #             filtered_images.append(image)
+        #     test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
+        # else:
+        #     test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
+        #
+        # print("Segmentation mask images generated in folder: {}".format(output_folder))
+        # print("Saving output masks to files '{}/output_masks_*.npy".format(output_folder))
+        # for index, mask in enumerate(masks):
+        #     mask.tofile('{}/output_masks_{}.npy'.format(output_folder, index + 1))
+        for index, dicom_output in enumerate(dicom_outputs):
+            dicom_output.tofile('{}/output_{}.dcm'.format(output_folder, index + 1))
 
-        if images[0].position is None:
-            # We must sort the images by their instance UID based on the order of the response:
-            identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
-            filtered_images = []
-            for id in identifiers:
-                image = next((img for img in images if img.instanceUID == id), None)
-                if image:
-                    filtered_images.append(image)
-            test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
-        else:
-            test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
 
-        print("Segmentation mask images generated in folder: {}".format(output_folder))
-        print("Saving output masks to files '{}/output_masks_*.npy".format(output_folder))
-        for index, mask in enumerate(masks):
-            mask.tofile('{}/output_masks_{}.npy'.format(output_folder, index + 1))
     elif model_type == BOUNDING_BOX:
         boxes = json_response['bounding_boxes_2d']
         test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
