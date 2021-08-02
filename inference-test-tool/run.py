@@ -153,6 +153,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         # for index, mask in enumerate(masks):
         #     mask.tofile('{}/output_masks_{}.npy'.format(output_folder, index + 1))
         for index, dicom_output in enumerate(dicom_outputs):
+            create_folder(output_folder)
             dicom_output.tofile('{}/output_{}.dcm'.format(output_folder, index + 1))
 
 
