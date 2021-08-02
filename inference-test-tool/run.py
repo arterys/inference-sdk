@@ -32,14 +32,17 @@ SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
 CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
 OTHER = "OTHER"
+ICAD = "ICAD"
 
 def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
-    images = load_image_data(file_path)
-    images = sort_images(images)
-
+    images = []
+    if file_path:
+        images = load_image_data(file_path)
+        images = sort_images(images)
+    
     if model_type == BOUNDING_BOX:
         print("Performing bounding box prediction")
         inference_command = 'get-bounding-box-2d'
@@ -63,6 +66,11 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     request_json = {'request': 'post',
                     'route': route,
                     'inference_command': inference_command}
+
+    if model_type == ICAD:
+        request_json.studyUID = '1.2.840.113711.676021.3.40956.532496547.26.2116281012.18390'
+        request_json.studyPath = 'study'
+        request_json.encodedConfigXML = 'PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+PERpY3Rpb25hcnk+PGl0ZW0+PGtleT48c3RyaW5nPk91dHB1dC5NYW51ZmFjdHVyZU1vZGVsPC9zdHJpbmc+PC9rZXk+PHZhbHVlPjxzdHJpbmc+Jmx0Oz94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8mZ3Q7Jmx0O3N0cmluZyZndDtQb3dlckxvb2stQXJ0ZXJ5cyZsdDsvc3RyaW5nJmd0Ozwvc3RyaW5nPjwvdmFsdWU+PC9pdGVtPjwvRGljdGlvbmFyeT4='
 
     count = 0
     width = 0
@@ -161,7 +169,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
+    parser.add_argument("-i", "--input", default=None, help="Path to dicom directory to upload.")
     parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask",
         action='store_true')
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
