@@ -47,7 +47,10 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         print("Performing bounding box prediction")
         inference_command = 'get-bounding-box-2d'
     elif model_type == SEGMENTATION_MODEL:
-        if images[0].position is None:
+        if len(images) == 0:
+            print("Performing ICAD inference")
+            inference_command = 'icad-pfai'
+        elif images[0].position is None:
             # No spatial information available. Perform 2D segmentation
             print("Performing 2D mask segmentation")
             inference_command = 'get-probability-mask-2D'
