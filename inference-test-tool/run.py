@@ -42,7 +42,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     if file_path:
         images = load_image_data(file_path)
         images = sort_images(images)
-    
+
     if model_type == BOUNDING_BOX:
         print("Performing bounding box prediction")
         inference_command = 'get-bounding-box-2d'
@@ -65,12 +65,10 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
 
     request_json = {'request': 'post',
                     'route': route,
-                    'inference_command': inference_command}
-
-    if model_type == ICAD:
-        request_json.studyUID = '1.2.840.113711.676021.3.40956.532496547.26.2116281012.18390'
-        request_json.studyPath = 'study'
-        request_json.encodedConfigXML = 'PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+PERpY3Rpb25hcnk+PGl0ZW0+PGtleT48c3RyaW5nPk91dHB1dC5NYW51ZmFjdHVyZU1vZGVsPC9zdHJpbmc+PC9rZXk+PHZhbHVlPjxzdHJpbmc+Jmx0Oz94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8mZ3Q7Jmx0O3N0cmluZyZndDtQb3dlckxvb2stQXJ0ZXJ5cyZsdDsvc3RyaW5nJmd0Ozwvc3RyaW5nPjwvdmFsdWU+PC9pdGVtPjwvRGljdGlvbmFyeT4='
+                    'inference_command': inference_command,
+                    'studyUID': '1.2.840.113711.676021.3.40956.532496547.26.2116281012.18390',
+                    'studyPath': 'study',
+                    'encodedConfigXML': 'PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+PERpY3Rpb25hcnk+PGl0ZW0+PGtleT48c3RyaW5nPk91dHB1dC5NYW51ZmFjdHVyZU1vZGVsPC9zdHJpbmc+PC9rZXk+PHZhbHVlPjxzdHJpbmc+Jmx0Oz94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8mZ3Q7Jmx0O3N0cmluZyZndDtQb3dlckxvb2stQXJ0ZXJ5cyZsdDsvc3RyaW5nJmd0Ozwvc3RyaW5nPjwvdmFsdWU+PC9pdGVtPjwvRGljdGlvbmFyeT4='}
 
     count = 0
     width = 0
