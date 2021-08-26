@@ -171,8 +171,8 @@ def get_cli_model_response(json_input, dicom_instances):
         input_path+'/*',
         output_path,
     ]
-    cli_model = CliModel(input_path, output_path, cleanup_paths, cli_args, '/workdir')
-    response_json_body, response_files = cli_model.run(request_binary_dicom_parts)
+    cli_model = CliModel(input_path, output_path, cleanup_paths, cli_args, '/tmp')
+    response_json, response_files = cli_model.run(dicom_instances)
 
     return response_json, response_files
 

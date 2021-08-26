@@ -10,7 +10,7 @@ from .utils import term_colors
 class TestSecondaryCapture(MockServerTestCase):
     input_dir = 'test_secondary_capture/'
     output_dir = 'test_secondary_capture_out/'
-    command = '-s3D'
+    command = '--cli_model'
     test_name = 'Secondary capture test'
 
     def testOutputFiles(self):
