@@ -33,7 +33,32 @@ BOUNDING_BOX = "BOUNDING_BOX"
 CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
 OTHER = "OTHER"
 
-def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
+def save_secondary_captures(json_response, output_folder_path, multipart_data):
+    secondary_capture_parts = [
+        p for p in json_response['parts'] if p['binary_type'] in
+        ['dicom', 'dicom_secondary_capture']
+    ]
+
+    # Create DICOM files for secondary capture outputs
+    for index, sc in enumerate(secondary_capture_parts):
+        file_path = os.path.join(
+            output_folder_path, '{}{}.dcm'.format(sc['label'], index)
+        )
+        with open(file_path, 'wb') as outfile:
+            outfile.write(multipart_data.parts[index].content)
+
+def upload_study_me(file_path,
+                    model_type,
+                    host,
+                    port,
+                    output_folder,
+                    attachments,
+                    override_inference_command=None,
+                    send_study_size=False,
+                    include_label_plots=False,
+                    route='/',
+                    send_only_study_path=False,
+                    encoded_config_xml=''):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -60,9 +85,15 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     if override_inference_command:
         inference_command = override_inference_command
 
-    request_json = {'request': 'post',
-                    'route': route,
-                    'inference_command': inference_command}
+    request_json = {
+        'request': 'post',
+        'route': route,
+        'inference_command': inference_command,
+        'studyUID': pydicom.dcmread(images[0].path)['StudyInstanceUID'].value
+    }
+
+    if encoded_config_xml:
+        request_json['encodedConfigXML'] = encoded_config_xml
 
     count = 0
     width = 0
@@ -74,36 +105,43 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         filename = os.path.basename(os.path.normpath(att))
         file_dict.append((field, (filename, fo, 'application/octet-stream')))
 
-    for image in images:
-        try:
-            dcm_file = pydicom.dcmread(image.path)
-            if width == 0 or height == 0:
-                width = dcm_file.Columns
-                height = dcm_file.Rows
-            count += 1
-            field = str(count)
-            fo = open(image.path, 'rb').read()
-            filename = os.path.basename(os.path.normpath(image.path))
-            file_dict.append((field, (filename, fo, 'application/dicom')))
-        except:
-            print('File {} is not a DICOM file'.format(image.path))
-            continue
+    # Either send the path to the study in the request json,
+    # or append each dicom file to the request data based on send_only_study_path flag
+    if send_only_study_path:
+        request_json['studyPath'] = file_path
+    else:
+        for image in images:
+            try:
+                dcm_file = pydicom.dcmread(image.path)
+                if width == 0 or height == 0:
+                    width = dcm_file.Columns
+                    height = dcm_file.Rows
+                count += 1
+                field = str(count)
+                fo = open(image.path, 'rb').read()
+                filename = os.path.basename(os.path.normpath(image.path))
+                file_dict.append((field, (filename, fo, 'application/dicom')))
+            except:
+                print('File {} is not a DICOM file'.format(image.path))
+                continue
 
-    print('Sending {} files...'.format(len(images)))
+        print('Sending {} files...'.format(len(images)))
+
     if send_study_size:
         request_json['depth'] = count
         request_json['height'] = height
         request_json['width'] = width
 
-    file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
-
-    me = MultipartEncoder(fields=file_dict)
-    boundary = me.content_type.split('boundary=')[1]
-    headers['Content-Type'] = headers['Content-Type'] + 'boundary="{}"'.format(boundary)
-
     target = 'http://' + host + ':' + port + route
     print('Targeting inference request to: {}'.format(target))
-    r = requests.post(target, data=me, headers=headers)
+    if send_only_study_path:
+        r = requests.post(target, json=request_json, headers=headers)
+    else:
+        file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
+        me = MultipartEncoder(fields=file_dict)
+        boundary = me.content_type.split('boundary=')[1]
+        headers['Content-Type'] = headers['Content-Type'] + 'boundary="{}"'.format(boundary)
+        r = requests.post(target, data=me, headers=headers)
 
     if r.status_code != 200:
         print("Got error status code ", r.status_code)
@@ -118,7 +156,7 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
     has_digests = last_part.headers[b'Content-Type'] == b'text/plain' and \
         len(multipart_data.parts[-1].text) == 129 and multipart_data.parts[-1].text[64] == ':'
 
-    if model_type == SEGMENTATION_MODEL:
+    if all(['dicom_image' in part and 'SOPInstanceUID' in part['dicom_image'] for part in json_response['parts']]):
         mask_count = len(json_response["parts"])
 
         # Assert that we get one binary part for each object in 'parts'
@@ -146,17 +184,18 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         print("Saving output masks to files '{}/output_masks_*.npy".format(output_folder))
         for index, mask in enumerate(masks):
             mask.tofile('{}/output_masks_{}.npy'.format(output_folder, index + 1))
-    elif model_type == BOUNDING_BOX:
+    if 'bounding_boxes_2d' in json_response:
         boxes = json_response['bounding_boxes_2d']
         test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
 
-    elif model_type == CLASSIFICATION_MODEL:
-        create_folder(output_folder)
-        if include_label_plots:
-            test_inference_classification.generate_images_with_labels(images, json_response, output_folder)
+    create_folder(output_folder)
+    if include_label_plots:
+        test_inference_classification.generate_images_with_labels(images, json_response, output_folder)
 
     with open(os.path.join(output_folder, 'response.json'), 'w') as outfile:
         json.dump(json_response, outfile)
+
+    save_secondary_captures(json_response, output_folder, multipart_data)
 
 
 def parse_args():
@@ -178,6 +217,10 @@ def parse_args():
         action='store_true')
     parser.add_argument("-c", "--inference_command", default=None, help="If set, overrides the 'inference_command' send in the request")
     parser.add_argument("-r", "--route", default='/', help="If set, the inference command is directed to the given route. Defaults to '/' route.")
+    parser.add_argument("--send_only_study_path", default=False, action='store_true',
+        help="If set, only the study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
+             "When set, ensure volumes are mounted appropriately in the inference docker container")
+    parser.add_argument("-C", "--encoded_config_xml", default='', type=str, help="Optional encoded XML config to be passed as encodedConfigXML in request JSON")
     args = parser.parse_args()
 
     return args
@@ -192,4 +235,15 @@ if __name__ == '__main__':
         model_type = CLASSIFICATION_MODEL
     else:
         model_type = OTHER
-    upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size, args.include_label_plots, args.route)
+    upload_study_me(args.input,
+                    model_type,
+                    args.host,
+                    args.port,
+                    args.output,
+                    args.attachments,
+                    args.inference_command,
+                    args.send_study_size,
+                    args.include_label_plots,
+                    args.route,
+                    args.send_only_study_path,
+                    args.encoded_config_xml)

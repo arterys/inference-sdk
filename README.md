@@ -520,6 +520,8 @@ Parameters:
 * `-a`: Add attachments to the request. Arguments should be paths to files.
 * `-S`: If the study size should be send in the request JSON
 * `-c`: If set, overrides the 'inference_command' send in the request
+* `--send_only_study_path`: If set, only the study path is sent to the inference SDK, rather than the study images being sent through HTTP. When set, ensure volumes are mounted appropriately in the inference docker container
+* `-C`: Optional encoded XML config to be passed as encodedConfigXML in request JSON
 
 > PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool.
 You can check if the model's output will be correctly displayed on the Arterys web app.

@@ -11,7 +11,7 @@ class TestSecondaryCapture(MockServerTestCase):
     input_dir = 'test_secondary_capture/'
     output_dir = 'test_secondary_capture_out/'
     command = '-s3D'
-    test_name = 'Secondary catpure test'
+    test_name = 'Secondary capture test'
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
@@ -39,7 +39,8 @@ class TestSecondaryCapture(MockServerTestCase):
         output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
         output_files = os.listdir(output_folder_path)
         count_masks = len([f for f in output_files if f.startswith("sc_")])
-        secondary_capture_parts = [p for p in data["parts"] if p['binary_type'] == 'dicom_secondary_capture']
+        # Test secondary capture and structured reports
+        secondary_capture_parts = [p for p in data["parts"] if p['binary_type'] in ['dicom_secondary_capture', 'dicom']]
         self.assertEqual(count_masks, len(secondary_capture_parts))
 
         # Read and verify output secondary capture dicom files
