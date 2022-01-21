@@ -39,8 +39,7 @@ class TestSecondaryCapture(MockServerTestCase):
         output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
         output_files = os.listdir(output_folder_path)
         count_masks = len([f for f in output_files if f.startswith("sc_")])
-        # Test secondary capture and structured reports
-        secondary_capture_parts = [p for p in data["parts"] if p['binary_type'] in ['dicom_secondary_capture', 'dicom']]
+        secondary_capture_parts = [p for p in data["parts"] if p['binary_type'] == 'dicom_secondary_capture']
         self.assertEqual(count_masks, len(secondary_capture_parts))
 
         # Read and verify output secondary capture dicom files
