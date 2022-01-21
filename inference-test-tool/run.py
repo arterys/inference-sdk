@@ -42,7 +42,7 @@ def save_secondary_captures(json_response, output_folder_path, multipart_data):
     # Create DICOM files for secondary capture outputs
     for index, sc in enumerate(secondary_capture_parts):
         file_path = os.path.join(
-            output_folder_path, '{}{}.dcm'.format(sc['label'], index)
+            output_folder_path, 'sc_{}.dcm'.format(index)
         )
         with open(file_path, 'wb') as outfile:
             outfile.write(multipart_data.parts[index].content)
