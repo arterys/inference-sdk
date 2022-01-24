@@ -358,7 +358,7 @@ For an example, the `write_dataset_to_bytes` function on [this Pydicom help page
 
 ##### DICOM structured report
 
-If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the previous section, just change `'binary_type'` to `'dicom'`.
+If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the previous section, just change `'binary_type'` to `'dicom_structured_report'`.
 
 ##### Returning DICOM conformance errors
 

@@ -23,7 +23,7 @@ from requests_toolbelt.multipart import decoder
 import pydicom
 import numpy as np
 import test_inference_mask, test_inference_boxes, test_inference_classification
-from utils import create_folder
+from utils import create_folder, DICOM_BINARY_TYPES
 
 
 from utils import load_image_data, sort_images
@@ -36,11 +36,11 @@ OTHER = "OTHER"
 def save_secondary_captures(json_response, output_folder_path, multipart_data):
     secondary_capture_parts = [
         p for p in json_response['parts'] if p['binary_type'] in
-        ['dicom', 'dicom_secondary_capture']
+        ['dicom_structured_report', 'dicom_secondary_capture']
     ]
 
     # Create DICOM files for secondary capture outputs
-    for index, sc in enumerate(secondary_capture_parts):
+    for index in range(len(secondary_capture_parts)):
         file_path = os.path.join(
             output_folder_path, 'sc_{}.dcm'.format(index)
         )
@@ -156,34 +156,37 @@ def upload_study_me(file_path,
     has_digests = last_part.headers[b'Content-Type'] == b'text/plain' and \
         len(multipart_data.parts[-1].text) == 129 and multipart_data.parts[-1].text[64] == ':'
 
-    if all(['dicom_image' in part and 'SOPInstanceUID' in part['dicom_image'] for part in json_response['parts']]):
-        mask_count = len(json_response["parts"])
+    mask_count = len(json_response["parts"])
 
-        # Assert that we get one binary part for each object in 'parts'
-        # The additional two multipart object are: JSON response and request:response digests
-        non_buffer_count = 2 if has_digests else 1
-        assert mask_count == len(multipart_data.parts) - non_buffer_count, \
-            "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
-            .format(len(multipart_data.parts) - non_buffer_count, mask_count)
+    # Assert that we get one binary part for each object in 'parts'
+    # The additional two multipart object are: JSON response and request:response digests
+    non_buffer_count = 2 if has_digests else 1
+    assert mask_count == len(multipart_data.parts) - non_buffer_count, \
+        "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
+        .format(len(multipart_data.parts) - non_buffer_count, mask_count)
 
-        masks = [np.frombuffer(p.content, dtype=np.uint8) for p in multipart_data.parts[1:mask_count+1]]
+    masks = [np.frombuffer(p.content, dtype=np.uint8) for i, p in enumerate(multipart_data.parts[1:mask_count+1])
+             if json_response['parts'][i]['binary_type'] not in DICOM_BINARY_TYPES]
 
-        if images[0].position is None:
-            # We must sort the images by their instance UID based on the order of the response:
-            identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
-            filtered_images = []
-            for id in identifiers:
-                image = next((img for img in images if img.instanceUID == id), None)
-                if image:
-                    filtered_images.append(image)
-            test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
-        else:
-            test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
+    if images[0].position is None and \
+            all(['dicom_image' in part and 'SOPInstanceUID' in part['dicom_image'] for part in json_response['parts']]):
+        # We must sort the images by their instance UID based on the order of the response:
+        identifiers = [part['dicom_image']['SOPInstanceUID'] for part in json_response["parts"]]
+        filtered_images = []
+        for id in identifiers:
+            image = next((img for img in images if img.instanceUID == id), None)
+            if image:
+                filtered_images.append(image)
+        test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
+    else:
+        test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
 
+    if len(masks) > 0:
         print("Segmentation mask images generated in folder: {}".format(output_folder))
         print("Saving output masks to files '{}/output_masks_*.npy".format(output_folder))
         for index, mask in enumerate(masks):
             mask.tofile('{}/output_masks_{}.npy'.format(output_folder, index + 1))
+
     if 'bounding_boxes_2d' in json_response:
         boxes = json_response['bounding_boxes_2d']
         test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
