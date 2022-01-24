@@ -1,6 +1,6 @@
 boto3==1.12.48
 flask==1.1.2
-numpy==1.18.3
+numpy==1.21.0
 pydicom==1.4.2
 pyyaml==5.4
 requests-toolbelt==0.9.1
