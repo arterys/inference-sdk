@@ -45,7 +45,7 @@ def save_secondary_captures(json_response, output_folder_path, multipart_data):
             output_folder_path, 'sc_{}.dcm'.format(index)
         )
         with open(file_path, 'wb') as outfile:
-            outfile.write(multipart_data.parts[index].content)
+            outfile.write(multipart_data.parts[index + 1].content)
 
 def upload_study_me(file_path,
                     model_type,
