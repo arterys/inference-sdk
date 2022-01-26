@@ -57,7 +57,7 @@ def upload_study_me(file_path,
                     send_study_size=False,
                     include_label_plots=False,
                     route='/',
-                    send_only_study_path=False,
+                    request_study_path='',
                     encoded_config_xml=''):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
@@ -106,9 +106,9 @@ def upload_study_me(file_path,
         file_dict.append((field, (filename, fo, 'application/octet-stream')))
 
     # Either send the path to the study in the request json,
-    # or append each dicom file to the request data based on send_only_study_path flag
-    if send_only_study_path:
-        request_json['studyPath'] = file_path
+    # or append each dicom file to the request data based on request_study_path flag
+    if request_study_path:
+        request_json['studyPath'] = request_study_path
     else:
         for image in images:
             try:
@@ -134,7 +134,7 @@ def upload_study_me(file_path,
 
     target = 'http://' + host + ':' + port + route
     print('Targeting inference request to: {}'.format(target))
-    if send_only_study_path:
+    if request_study_path:
         r = requests.post(target, json=request_json, headers=headers)
     else:
         file_dict.insert(0, ('request_json', ('request', json.dumps(request_json).encode('utf-8'), 'text/json')))
@@ -220,8 +220,8 @@ def parse_args():
         action='store_true')
     parser.add_argument("-c", "--inference_command", default=None, help="If set, overrides the 'inference_command' send in the request")
     parser.add_argument("-r", "--route", default='/', help="If set, the inference command is directed to the given route. Defaults to '/' route.")
-    parser.add_argument("--send_only_study_path", default=False, action='store_true',
-        help="If set, only the study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
+    parser.add_argument("--request_study_path", default='', type=str,
+        help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
              "When set, ensure volumes are mounted appropriately in the inference docker container")
     parser.add_argument("-C", "--encoded_config_xml", default='', type=str, help="Optional encoded XML config to be passed as encodedConfigXML in request JSON")
     args = parser.parse_args()
@@ -248,5 +248,5 @@ if __name__ == '__main__':
                     args.send_study_size,
                     args.include_label_plots,
                     args.route,
-                    args.send_only_study_path,
+                    args.request_study_path,
                     args.encoded_config_xml)
