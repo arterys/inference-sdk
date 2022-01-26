@@ -54,7 +54,7 @@ The following example establishes an inference service that listens on http://0.
 '/' that accepts inference requests. It responds with a 5x5 bounding box annotation on the first DICOM instance in the
 list of dicom instances it receives.
 
-```
+```python
 from gateway import Gateway
 
 def handle_exception(e):
@@ -514,6 +514,7 @@ Parameters:
 * `-s`: Use it if model is a segmentation model
 * `-b`: Use it if model is a bounding box model
 * `-cl`: Use it if model is a classification model
+* `-sc`: Use it if model is a secondary capture model
 * `-l`: Use it if you want to generate PNG images with labels plotted on top of them (only applies to classification models)
 * `--host` and `--port`: host and port of inference server
 * `-i`: Input files

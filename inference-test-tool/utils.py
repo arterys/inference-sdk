@@ -166,3 +166,13 @@ def get_pixels(dicom_file):
 def create_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
+
+def write_secondary_captures(json_response, multipart_data, output_folder):
+    num_parts = len(json_response['parts'])
+    print('write_secondary_captures {} parts'.format(num_parts))
+
+    secondary_captures = multipart_data.parts[1:num_parts]
+    for index, sc in enumerate(secondary_captures):
+        dcm = pydicom.read_file(BytesIO(sc.content))
+        file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
+        pydicom.dcmwrite(file_path, dcm)

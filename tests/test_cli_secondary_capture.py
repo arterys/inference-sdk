@@ -7,11 +7,11 @@ from pydicom.errors import InvalidDicomError
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors
 
-class TestSecondaryCapture(MockServerTestCase):
+class TestCliSecondaryCapture(MockServerTestCase):
     input_dir = 'test_secondary_capture/'
-    output_dir = 'test_secondary_capture_out/'
-    command = '-s3D'
-    test_name = 'Secondary capture test'
+    output_dir = 'test_cli_secondary_capture_out/'
+    command = '--cli_model'
+    test_name = 'CLI Secondary capture test'
 
     def testOutputFiles(self):
         input_files = os.listdir(os.path.join('tests/data', self.input_dir))
@@ -50,4 +50,4 @@ class TestSecondaryCapture(MockServerTestCase):
             except InvalidDicomError:
                 self.fail("output dcm file is invalid!")
 
-        print(term_colors.OKGREEN + "Secondary capture test succeeded!!", term_colors.ENDC)
+        print(term_colors.OKGREEN + "CLI Secondary capture test succeeded!!", term_colors.ENDC)

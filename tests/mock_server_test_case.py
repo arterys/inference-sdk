@@ -43,8 +43,6 @@ class MockServerTestCase(unittest.TestCase):
             self.stop_service()
             if os.path.exists(os.path.join(self.inference_test_dir, self.output_dir)):
                 shutil.rmtree(os.path.join(self.inference_test_dir, self.output_dir))
-            if os.path.exists(os.path.join(self.inference_test_dir, self.input_dir)):
-                shutil.rmtree(os.path.join(self.inference_test_dir, self.input_dir))
 
         self.addCleanup(cleanup)
         copy_tree(os.path.join('tests/data', self.input_dir), os.path.join(self.inference_test_dir, self.input_dir))

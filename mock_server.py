@@ -17,6 +17,7 @@ import yaml
 import numpy
 import pydicom
 from utils import tagged_logger
+from utils.cli_model import CliModel
 
 # ensure logging is configured before flask is initialized
 
@@ -153,6 +154,28 @@ def get_probability_mask_2D_response(json_input, dicom_instances):
 
     return response_json, masks
 
+def get_cli_model_response(json_input, dicom_instances):
+    # Run CLI Model
+    input_path = '/opt/input_parts'
+    output_path = '/opt/output'
+    tmp_path = '/opt/tmp'
+    cleanup_paths = [
+        input_path,
+        output_path,
+        tmp_path,
+    ]
+
+    # Invoke your cli model with cli_args here, a simple cp command is invoked as a mock example
+    cli_args = [
+        'cp',
+        input_path+'/*',
+        output_path,
+    ]
+    cli_model = CliModel(input_path, output_path, cleanup_paths, cli_args, '/tmp')
+    response_json, response_files = cli_model.run(dicom_instances)
+
+    return response_json, response_files
+
 def request_handler_classification(json_input, dicom_instances, input_digest):
     """
     A mock inference model that returns labels in free-form json format
@@ -189,6 +212,17 @@ def request_handler_2D_segmentation(json_input, dicom_instances, input_digest):
     transaction_logger.info('mock_model received json_input={}'.format(json_input))
     return get_probability_mask_2D_response(json_input, dicom_instances)
 
+def request_handler_cli(json_input, dicom_instances, input_digest):
+    """
+    A mock inference model that reads a directory of input dicom files, and writes a directory of output files
+
+    This is useful for models that are written to be invoked as a command line app.
+    """
+    transaction_logger = tagged_logger.TaggedLogger(logger)
+    transaction_logger.add_tags({ 'input_hash': input_digest })
+    transaction_logger.info('mock_model received json_input={}'.format(json_input))
+    return get_cli_model_response(json_input, dicom_instances)
+
 def parse_args():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
@@ -199,6 +233,8 @@ def parse_args():
     group.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
     group.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
+        action='store_true')
+    group.add_argument("--cli_model", default=False, help="If model is a cli app with input and output folders",
         action='store_true')
     args = parser.parse_args()
 
@@ -214,6 +250,8 @@ if __name__ == '__main__':
         app.add_inference_route('/', request_handler_3D_segmentation)
     elif args.classification_model:
         app.add_inference_route('/', request_handler_classification)
+    elif args.cli_model:
+        app.add_inference_route('/', request_handler_cli)
     else:
         app.add_inference_route('/', request_handler_2D_segmentation)
 

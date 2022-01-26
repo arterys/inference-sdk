@@ -26,11 +26,12 @@ import test_inference_mask, test_inference_boxes, test_inference_classification
 from utils import create_folder
 
 
-from utils import load_image_data, sort_images
+from utils import load_image_data, sort_images, write_secondary_captures
 
 SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
 BOUNDING_BOX = "BOUNDING_BOX"
 CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
+SC_MODEL = "SECONDARY_CAPTURE_MODEL"
 OTHER = "OTHER"
 
 def upload_study_me(file_path, model_type, host, port, output_folder, attachments, override_inference_command=None, send_study_size=False, include_label_plots=False, route='/'):
@@ -154,6 +155,8 @@ def upload_study_me(file_path, model_type, host, port, output_folder, attachment
         create_folder(output_folder)
         if include_label_plots:
             test_inference_classification.generate_images_with_labels(images, json_response, output_folder)
+    elif model_type == SC_MODEL:
+        write_secondary_captures(json_response, multipart_data, output_folder)
 
     with open(os.path.join(output_folder, 'response.json'), 'w') as outfile:
         json.dump(json_response, outfile)
@@ -163,6 +166,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
     parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask",
+        action='store_true')
+    parser.add_argument("-sc", "--secondary_capture", default=False, help="If the model's output are secondary captures",
         action='store_true')
     parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
         action='store_true')
@@ -190,6 +195,8 @@ if __name__ == '__main__':
         model_type = BOUNDING_BOX
     elif args.classification_model:
         model_type = CLASSIFICATION_MODEL
+    elif args.secondary_capture:
+        model_type = SC_MODEL
     else:
         model_type = OTHER
     upload_study_me(args.input, model_type, args.host, args.port, args.output, args.attachments, args.inference_command, args.send_study_size, args.include_label_plots, args.route)
