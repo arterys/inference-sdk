@@ -198,7 +198,7 @@ def parse_args():
         help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
              "When set, ensure volumes are mounted appropriately in the inference docker container")
     parser.add_argument("-C", "--encoded_config_xml", default='', type=str, help="Optional encoded XML config to be passed as encodedConfigXML in request JSON")
-    parser.add_argument("-K", "--plwmKey", default='', type=str, help="base64 encoded license key")
+    parser.add_argument("-K", "--plwmKey", default='', type=str, help="Optional base64 encoded license key, only required for some models")
     args = parser.parse_args()
 
     return args

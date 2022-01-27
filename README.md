@@ -410,14 +410,12 @@ docker logs -f <name of the container>
 curl localhost:8900/healthcheck
 ```
 
-For `<command>` pass `-b` for bounding boxes, `-s3D` for 3D segmentation, `-s2D` for 2D segmentation, depending on what type of result your model produces.
-
 If you want to pass additional flags to the `docker run` command which is run in `start_server.sh` then you can pass all of them behind the `command`.
 
 For example, to run the container in background, and add access to GPU:
 
 ```bash
-./start_server.sh -b -d --gpus=all
+./start_server.sh -d --gpus=all
 ```
 
 While developing it might also be handy to add a volume with the current directory to speed up the test cycle.
@@ -506,22 +504,23 @@ If you don't specify any arguments, a usage message will be shown.
 The script accepts the following parameters:
 
 ```
-./send-inference-request.sh [-h] [-s] [-b] [-cl] [-l] [--host HOST] [--port PORT] [-i /path/to/dicom/files] [-a attachment1 ... attachmentN] [-S] [-c INFERENCE_COMMAND]
+./send-inference-request.sh [-h] [-i INPUT] [-l] [--host HOST] [-p PORT] [-o OUTPUT]
+              [-a ATTACHMENTS [ATTACHMENTS ...]] [-S] [-c INFERENCE_COMMAND]
+              [-r ROUTE] [--request_study_path REQUEST_STUDY_PATH]
+              [-C ENCODED_CONFIG_XML] [-K PLWMKEY]
 ```
 
 Parameters:
 * `-h`: Print usage help
-* `-s`: Use it if model is a segmentation model
-* `-b`: Use it if model is a bounding box model
-* `-cl`: Use it if model is a classification model
 * `-l`: Use it if you want to generate PNG images with labels plotted on top of them (only applies to classification models)
 * `--host` and `--port`: host and port of inference server
 * `-i`: Input files
 * `-a`: Add attachments to the request. Arguments should be paths to files.
 * `-S`: If the study size should be send in the request JSON
 * `-c`: If set, overrides the 'inference_command' send in the request
-* `--send_only_study_path`: If set, only the study path is sent to the inference SDK, rather than the study images being sent through HTTP. When set, ensure volumes are mounted appropriately in the inference docker container
+* `--request_study_path`: If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. When set, ensure volumes are mounted appropriately in the inference docker container
 * `-C`: Optional encoded XML config to be passed as encodedConfigXML in request JSON
+* `-K`: Optional base64 encoded license key, only required for some models
 
 > PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool.
 You can check if the model's output will be correctly displayed on the Arterys web app.
@@ -533,7 +532,7 @@ folder, you may send this study to your segmentation model listening on port 890
 command in the `inference-test-tool` directory:
 
 ```bash
-./send-inference-request.sh -s --host 0.0.0.0 --port 8900 -i ./study-folder/
+./send-inference-request.sh --host 0.0.0.0 --port 8900 -i ./study-folder/
 ```
 
 For this to work, the folder where you have your DICOM files (`study-folder` in this case) must be a subfolder of
@@ -548,7 +547,7 @@ The list of files will include tha attachments at the front followed by the DICO
 To test this with the test tool you can use the `-a` parameter to add any number of attachments like this:
 
 ```bash
-./send-inference-request.sh -b --host 0.0.0.0 -p 8900 -i in/ -a some_attachment.txt other_attachment.bin
+./send-inference-request.sh --host 0.0.0.0 -p 8900 -i in/ -a some_attachment.txt other_attachment.bin
 ```
 
 
