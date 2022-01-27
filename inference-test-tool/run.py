@@ -53,7 +53,8 @@ def upload_study_me(file_path,
                     include_label_plots=False,
                     route='/',
                     request_study_path='',
-                    encoded_config_xml=''):
+                    encoded_config_xml='',
+                    plwmKey=''):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -69,6 +70,9 @@ def upload_study_me(file_path,
 
     if encoded_config_xml:
         request_json['encodedConfigXML'] = encoded_config_xml
+
+    if plwmKey:
+        request_json['plwmKey'] = plwmKey
 
     count = 0
     width = 0
@@ -194,6 +198,7 @@ def parse_args():
         help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
              "When set, ensure volumes are mounted appropriately in the inference docker container")
     parser.add_argument("-C", "--encoded_config_xml", default='', type=str, help="Optional encoded XML config to be passed as encodedConfigXML in request JSON")
+    parser.add_argument("-K", "--plwmKey", default='', type=str, help="base64 encoded license key")
     args = parser.parse_args()
 
     return args
@@ -210,4 +215,5 @@ if __name__ == '__main__':
                     args.include_label_plots,
                     args.route,
                     args.request_study_path,
-                    args.encoded_config_xml)
+                    args.encoded_config_xml,
+                    args.plwmKey)
