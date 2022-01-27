@@ -203,16 +203,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    if args.segmentation_model:
-        model_type = SEGMENTATION_MODEL
-    elif args.bounding_box_model:
-        model_type = BOUNDING_BOX
-    elif args.classification_model:
-        model_type = CLASSIFICATION_MODEL
-    else:
-        model_type = OTHER
     upload_study_me(args.input,
-                    model_type,
                     args.host,
                     args.port,
                     args.output,
