@@ -28,10 +28,6 @@ from utils import create_folder, DICOM_BINARY_TYPES
 
 from utils import load_image_data, sort_images
 
-SEGMENTATION_MODEL = "SEGMENTATION_MODEL"
-BOUNDING_BOX = "BOUNDING_BOX"
-CLASSIFICATION_MODEL = "CLASSIFICATION_MODEL"
-OTHER = "OTHER"
 
 def save_secondary_captures(json_response, output_folder_path, multipart_data):
     secondary_capture_parts = [
@@ -88,6 +84,7 @@ def upload_study_me(file_path,
     # or append each dicom file to the request data based on request_study_path flag
     if request_study_path:
         request_json['studyPath'] = request_study_path
+        headers['Content-Type'] = 'application/json'
     else:
         for image in images:
             try:
