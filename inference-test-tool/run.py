@@ -48,12 +48,11 @@ def save_secondary_captures(json_response, output_folder_path, multipart_data):
             outfile.write(multipart_data.parts[index + 1].content)
 
 def upload_study_me(file_path,
-                    model_type,
                     host,
                     port,
                     output_folder,
                     attachments,
-                    override_inference_command=None,
+                    override_inference_command='',
                     send_study_size=False,
                     include_label_plots=False,
                     route='/',
@@ -65,32 +64,12 @@ def upload_study_me(file_path,
     images = load_image_data(file_path)
     images = sort_images(images)
 
-    if model_type == BOUNDING_BOX:
-        print("Performing bounding box prediction")
-        inference_command = 'get-bounding-box-2d'
-    elif model_type == SEGMENTATION_MODEL:
-        if images[0].position is None:
-            # No spatial information available. Perform 2D segmentation
-            print("Performing 2D mask segmentation")
-            inference_command = 'get-probability-mask-2D'
-        else:
-            print("Performing 3D mask segmentation")
-            inference_command = 'get-probability-mask-3D'
-    elif model_type == CLASSIFICATION_MODEL:
-        print("Performing classification")
-        inference_command = 'get-classification-labels'
-    else:
-        inference_command = 'other'
-
-    if override_inference_command:
-        inference_command = override_inference_command
-
     request_json = {
-        'request': 'post',
-        'route': route,
-        'inference_command': inference_command,
         'studyUID': pydicom.dcmread(images[0].path)['StudyInstanceUID'].value
     }
+
+    if override_inference_command:
+        request_json['inference_command'] = override_inference_command
 
     if encoded_config_xml:
         request_json['encodedConfigXML'] = encoded_config_xml
@@ -204,12 +183,6 @@ def upload_study_me(file_path,
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
-    parser.add_argument("-s", "--segmentation_model", default=False, help="If the model's output is a segmentation mask",
-        action='store_true')
-    parser.add_argument("-b", "--bounding_box_model", default=False, help="If the model's output are bounding boxes",
-        action='store_true')
-    parser.add_argument("-cl", "--classification_model", default=False, help="If the model's output are labels",
-        action='store_true')
     parser.add_argument("-l", "--include_label_plots", default=False, help="If the model's output are labels and they should be plotted"
         "on top of the .png files.", action='store_true')
     parser.add_argument("--host", default='0.0.0.0', help="Host where inference SDK is hosted")
@@ -218,7 +191,7 @@ def parse_args():
     parser.add_argument('-a', '--attachments', nargs='+', default=[], help='One or more paths to files add as attachments to the request')
     parser.add_argument("-S", "--send_study_size", default=False, help="If the study size should be send in the request JSON",
         action='store_true')
-    parser.add_argument("-c", "--inference_command", default=None, help="If set, overrides the 'inference_command' send in the request")
+    parser.add_argument("-c", "--inference_command", default='', help="If set, overrides the 'inference_command' send in the request")
     parser.add_argument("-r", "--route", default='/', help="If set, the inference command is directed to the given route. Defaults to '/' route.")
     parser.add_argument("--request_study_path", default='', type=str,
         help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
