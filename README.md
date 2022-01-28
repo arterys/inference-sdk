@@ -507,7 +507,7 @@ The script accepts the following parameters:
 ./send-inference-request.sh [-h] [-i INPUT] [-l] [--host HOST] [-p PORT] [-o OUTPUT]
               [-a ATTACHMENTS [ATTACHMENTS ...]] [-S] [-c INFERENCE_COMMAND]
               [-r ROUTE] [--request_study_path REQUEST_STUDY_PATH]
-              [-C ENCODED_CONFIG_XML] [-K PLWMKEY]
+              [--request_options KEY=VALUE [KEY=VALUE ...]]
 ```
 
 Parameters:
@@ -519,8 +519,10 @@ Parameters:
 * `-S`: If the study size should be send in the request JSON
 * `-c`: If set, overrides the 'inference_command' send in the request
 * `--request_study_path`: If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. When set, ensure volumes are mounted appropriately in the inference docker container
-* `-C`: Optional encoded XML config to be passed as encodedConfigXML in request JSON
-* `-K`: Optional base64 encoded license key, only required for some models
+*  `--request_options`: Set a number of key-value pairs to be sent in the request JSON (do not put spaces before or after the = sign).
+                        If a value contains spaces, you should define it with double quotes.
+                        Values are always treated as strings.
+                        e.g. --request_options foo=bar a=b greeting="hello there"
 
 > PNG images will be generated and saved in the `inference-test-tool/output` directory as output of the test tool.
 You can check if the model's output will be correctly displayed on the Arterys web app.

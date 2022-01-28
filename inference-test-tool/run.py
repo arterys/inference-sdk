@@ -222,17 +222,15 @@ def parse_args():
     parser.add_argument("-c", "--inference_command", default='', help="If set, overrides the 'inference_command' send in the request")
     parser.add_argument("-r", "--route", default='/', help="If set, the inference command is directed to the given route. Defaults to '/' route.")
     parser.add_argument("--request_study_path", default='', type=str,
-        help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
+        help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. "
              "When set, ensure volumes are mounted appropriately in the inference docker container")
     parser.add_argument("--request_options", "-R",
                         metavar="KEY=VALUE",
                         nargs='+',
-                        help="Set a number of key-value pairs to be sent in the request JSON"
-                        "(do not put spaces before or after the = sign). "
+                        help="Set a number of key-value pairs to be sent in the request JSON (do not put spaces before or after the = sign). "
                         "If a value contains spaces, you should define "
-                        "it with double quotes: "
-                        'foo="this is a sentence". Note that '
-                        "values are always treated as strings.")
+                        "it with double quotes. Values are always treated as strings. "
+                        "e.g. --request_options foo=bar a=b greeting=\"hello there\"")
     args = parser.parse_args()
 
     return args
