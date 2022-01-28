@@ -53,8 +53,7 @@ def upload_study_me(file_path,
                     include_label_plots=False,
                     route='/',
                     request_study_path='',
-                    encoded_config_xml='',
-                    plwmKey=''):
+                    request_options={}):
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -68,11 +67,8 @@ def upload_study_me(file_path,
     if override_inference_command:
         request_json['inference_command'] = override_inference_command
 
-    if encoded_config_xml:
-        request_json['encodedConfigXML'] = encoded_config_xml
-
-    if plwmKey:
-        request_json['plwmKey'] = plwmKey
+    for key, value in request_options.items():
+        request_json[key] = value
 
     count = 0
     width = 0
@@ -181,6 +177,37 @@ def upload_study_me(file_path,
     save_secondary_captures(json_response, output_folder, multipart_data)
 
 
+def parse_option(s):
+    """
+    Parse a key, value pair, separated by '='
+    That's the reverse of ShellArgs.
+
+    On the command line (argparse) a declaration will typically look like:
+        foo=hello
+    or
+        foo="hello world"
+    """
+    items = s.split('=')
+    key = items[0].strip()
+    if len(items) > 1:
+        # rejoin the rest:
+        value = '='.join(items[1:])
+    return (key, value)
+
+
+def parse_request_options(items):
+    """
+    Parse a series of key-value pairs and return a dictionary
+    """
+    d = {}
+
+    if items:
+        for item in items:
+            key, value = parse_option(item)
+            d[key] = value
+    return d
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
@@ -197,14 +224,22 @@ def parse_args():
     parser.add_argument("--request_study_path", default='', type=str,
         help="If set, only the given study path is sent to the inference SDK, rather than the study images being sent through HTTP. " \
              "When set, ensure volumes are mounted appropriately in the inference docker container")
-    parser.add_argument("-C", "--encoded_config_xml", default='', type=str, help="Optional encoded XML config to be passed as encodedConfigXML in request JSON")
-    parser.add_argument("-K", "--plwmKey", default='', type=str, help="Optional base64 encoded license key, only required for some models")
+    parser.add_argument("--request_options", "-R",
+                        metavar="KEY=VALUE",
+                        nargs='+',
+                        help="Set a number of key-value pairs to be sent in the request JSON"
+                        "(do not put spaces before or after the = sign). "
+                        "If a value contains spaces, you should define "
+                        "it with double quotes: "
+                        'foo="this is a sentence". Note that '
+                        "values are always treated as strings.")
     args = parser.parse_args()
 
     return args
 
 if __name__ == '__main__':
     args = parse_args()
+    request_options = parse_request_options(args.request_options)
     upload_study_me(args.input,
                     args.host,
                     args.port,
@@ -215,5 +250,4 @@ if __name__ == '__main__':
                     args.include_label_plots,
                     args.route,
                     args.request_study_path,
-                    args.encoded_config_xml,
-                    args.plwmKey)
+                    request_options)
