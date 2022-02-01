@@ -10,6 +10,18 @@ The SDK helps you containerize your model into a Flask app with a predefined API
   - [The healthcheck endpoint](#the-healthcheck-endpoint)
   - [Handling an inference request](#handling-an-inference-request)
     - [Standard model outputs](#standard-model-outputs)
+      - [Bounding box](#bounding-box)
+      - [Classification labels (and other additional information)](#classification-labels-and-other-additional-information)
+      - [Segmentation masks](#segmentation-masks)
+        - [Probability mask for 3D Series](#probability-mask-for-3d-series)
+        - [Boolean mask for 3D Series](#boolean-mask-for-3d-series)
+        - [Heatmaps for 3D series](#heatmaps-for-3d-series)
+        - [Heatmaps for 2D series (e.g. X-Rays)](#heatmaps-for-2d-series-eg-x-rays)
+        - [Numeric label mask for 3D series](#numeric-label-mask-for-3d-series)
+      - [Linear measurements](#linear-measurements)
+      - [Secondary capture support](#secondary-capture-support)
+      - [DICOM structured report](#dicom-structured-report)
+      - [Returning DICOM conformance errors](#returning-dicom-conformance-errors)
     - [Request JSON format](#request-json-format)
   - [Build and run the mock inference service container](#build-and-run-the-mock-inference-service-container)
     - [Adding GPU support](#adding-gpu-support)
@@ -358,7 +370,7 @@ For an example, the `write_dataset_to_bytes` function on [this Pydicom help page
 
 ##### DICOM structured report
 
-If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the previous section, just change `'binary_type'` to `'dicom_structured_report'`.
+If your model returns a DICOM Structured Report then do the same as for secondary captures explained in the previous section, just change `'binary_type'` to `'dicom'`.
 
 ##### Returning DICOM conformance errors
 

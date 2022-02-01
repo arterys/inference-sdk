@@ -11,7 +11,7 @@ import numpy as np
 import SimpleITK as sitk
 from PIL import Image
 
-DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom_structured_report'}
+DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom', 'dicom_structured_report'}
 
 class DCM_Image:
     def __init__(self, dcm, path):
