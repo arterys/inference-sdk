@@ -95,42 +95,43 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
         file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
         pydicom.dcmwrite(file_path, dcm)
 
-    offset = 0
-
-    images_by_series = group_by_series(images)
-    series = images_by_series.keys()
-
-    for series_uid in series:
+    if len(binary_masks) > 0:
         offset = 0
-        for index, image in enumerate(images_by_series[series_uid]):
-            dcm = pydicom.dcmread(image.path)
-            pixels = get_pixels(dcm)
 
-            # Reshape and add alpha
-            pixels = np.reshape(pixels, (-1, 3))
-            pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
+        images_by_series = group_by_series(images)
+        series = images_by_series.keys()
 
-            for mask_index, (mask, json_part) in enumerate(zip(binary_masks, all_mask_parts)):
-                # If the input holds multiple timepoints but the result only includes 1 timepoint
-                if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
-                    continue
-                if ('SeriesInstanceUID' in json_part) and json_part['SeriesInstanceUID'] != series_uid:
-                    # This mask does not apply to this series
-                    continue
-                # get mask for this image
-                image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
-                pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
+        for series_uid in series:
+            offset = 0
+            for index, image in enumerate(images_by_series[series_uid]):
+                dcm = pydicom.dcmread(image.path)
+                pixels = get_pixels(dcm)
 
-            offset += dcm.Rows * dcm.Columns
-
-            # write image to output folder
-            output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
-            output_filename += '.png'
-
-            if pixels.shape[1] != 4:
+                # Reshape and add alpha
+                pixels = np.reshape(pixels, (-1, 3))
                 pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
-            pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
-            plt.imsave(output_filename, pixels)
+
+                for mask_index, (mask, json_part) in enumerate(zip(binary_masks, all_mask_parts)):
+                    # If the input holds multiple timepoints but the result only includes 1 timepoint
+                    if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
+                        continue
+                    if ('SeriesInstanceUID' in json_part) and json_part['SeriesInstanceUID'] != series_uid:
+                        # This mask does not apply to this series
+                        continue
+                    # get mask for this image
+                    image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
+                    pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
+
+                offset += dcm.Rows * dcm.Columns
+
+                # write image to output folder
+                output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
+                output_filename += '.png'
+
+                if pixels.shape[1] != 4:
+                    pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
+                pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
+                plt.imsave(output_filename, pixels)
 
 
 def generate_images_for_single_image_masks(dicom_images, inference_results, response_json, output_folder):
