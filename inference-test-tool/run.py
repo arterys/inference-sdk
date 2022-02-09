@@ -141,8 +141,7 @@ def upload_study_me(file_path,
         "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
         .format(len(multipart_data.parts) - non_buffer_count, mask_count)
 
-    masks = [np.frombuffer(p.content, dtype=np.uint8) for i, p in enumerate(multipart_data.parts[1:mask_count+1])
-             if json_response['parts'][i]['binary_type'] not in DICOM_BINARY_TYPES]
+    masks = [np.frombuffer(p.content, dtype=np.uint8) for p in enumerate(multipart_data.parts[1:mask_count+1])]
 
     if images[0].position is None and \
             all(['dicom_image' in part and 'SOPInstanceUID' in part['dicom_image'] for part in json_response['parts']]):
@@ -157,7 +156,10 @@ def upload_study_me(file_path,
     else:
         test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
 
-    if len(masks) > 0:
+    non_dicom_parts = [np.frombuffer(p.content, dtype=np.uint8) for i, p in enumerate(multipart_data.parts[1:mask_count+1])
+                       if json_response['parts'][i]['binary_type'] not in DICOM_BINARY_TYPES]
+
+    if len(non_dicom_parts) > 0:
         print("Segmentation mask images generated in folder: {}".format(output_folder))
         print("Saving output masks to files '{}/output_masks_*.npy".format(output_folder))
         for index, mask in enumerate(masks):
