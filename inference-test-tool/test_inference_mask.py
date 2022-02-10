@@ -98,19 +98,13 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     #         dcm = None
     #     # file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
     #     # # pydicom.dcmwrite(file_path, dcm)
-    for mask in masks:
-        print(mask)
     if len(masks) > 0:
         offset = 0
-        print(len(images))
         images_by_series = group_by_series(images)
-        print(len(images_by_series))
         series = images_by_series.keys()
-        print(series)
         index = 0
         for series_uid in series:
             offset = 0
-            print(len(images_by_series[series_uid]))
             for image in images_by_series[series_uid]:
                 dcm = pydicom.dcmread(image.path)
                 pixels = get_pixels(dcm)
