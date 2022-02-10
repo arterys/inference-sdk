@@ -12,6 +12,7 @@ import argparse
 import os
 import requests
 import json
+import pickle
 
 from pathlib import Path
 from email.mime.multipart import MIMEMultipart
@@ -109,6 +110,7 @@ def upload_study_me(file_path,
         request_json['width'] = width
 
     target = 'http://' + host + ':' + port + route
+    #multipart_data = pickle.load(open('multipart_data.pkl', 'rb'))
     print('Targeting inference request to: {}'.format(target))
     if request_study_path:
         r = requests.post(target, json=request_json, headers=headers)
@@ -124,6 +126,8 @@ def upload_study_me(file_path,
         exit(1)
 
     multipart_data = decoder.MultipartDecoder.from_response(r)
+
+    #pickle.dump(multipart_data, open('multipart_data.pkl', 'wb+'))
 
     json_response = json.loads(multipart_data.parts[0].text)
     print("JSON response:", json_response)
