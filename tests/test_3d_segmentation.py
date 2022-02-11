@@ -32,7 +32,6 @@ class Test3DSegmentation(MockServerTestCase):
         output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
         for name in input_files:
             self.assertTrue((name + '.png') in output_no_index)
-        print(len(output_no_index), len(input_files))
 
         # Test JSON response
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')
