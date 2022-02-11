@@ -12,7 +12,9 @@ class Test3DSegmentation(MockServerTestCase):
     test_name = '3D segmentation test'
 
     def testOutputFiles(self):
-        input_files = os.listdir(os.path.join('tests/data', self.input_dir))
+        input_files = [] # use walk to handle nested input folder
+        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
+            input_files += f
         result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
             cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
@@ -30,6 +32,7 @@ class Test3DSegmentation(MockServerTestCase):
         output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
         for name in input_files:
             self.assertTrue((name + '.png') in output_no_index)
+        print(len(output_no_index), len(input_files))
 
         # Test JSON response
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')
@@ -45,9 +48,11 @@ class Test3DSegmentation(MockServerTestCase):
         output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
         output_files = os.listdir(output_folder_path)
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
-        self.assertEqual(count_masks, len(data['parts']))
+        segmentation_masks_parts = [part for part in data['parts'] if part['binary_type']
+                in ['probability_mask', 'boolean_mask', 'numeric_label_mask']]
+        self.assertEqual(count_masks, len(segmentation_masks_parts))
 
-        for index, part in enumerate(data['parts']):
+        for index, part in enumerate(segmentation_masks_parts):
             self.assertIsInstance(part['binary_type'], str)
             self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
                 "'binary_type' is not among the supported mask types")

@@ -84,20 +84,8 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     """
     images, masks = _get_images_and_masks(dicom_images, inference_results)
     create_folder(output_folder)
-
-    # # Filter out secondary capture outputs
     all_mask_parts = filter_mask_parts(response_json)
-    # binary_masks, secondary_captures = filter_masks_by_binary_type(masks, all_mask_parts, response_json)
 
-    # # Create DICOM files for secondary capture outputs
-    # for index, sc in enumerate(secondary_captures):
-    #     try:
-    #         dcm = pydicom.read_file(BytesIO(sc.tobytes()))
-    #     except:
-    #         print("\n\n", index, sc, "\n\n")
-    #         dcm = None
-    #     # file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
-    #     # # pydicom.dcmwrite(file_path, dcm)
     if len(masks) > 0:
         offset = 0
         images_by_series = group_by_series(images)

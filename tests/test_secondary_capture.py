@@ -38,10 +38,10 @@ class TestSecondaryCapture(MockServerTestCase):
         # Test if the amount of binary buffers is equals to the elements in `parts`
         output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
         output_files = os.listdir(output_folder_path)
-        count_masks = len([f for f in output_files if f.startswith("sc_")])
+        count_scs = len([f for f in output_files if f.startswith("sc_")])
         secondary_capture_parts = [p for p in data["parts"] if p['binary_type']
                                    in {'dicom_secondary_capture', 'dicom', 'dicom_structured_report'}]
-        self.assertEqual(count_masks, len(secondary_capture_parts))
+        self.assertEqual(count_scs, len(secondary_capture_parts))
 
         # Read and verify output secondary capture dicom files
         for index, sc in enumerate(secondary_capture_parts):
