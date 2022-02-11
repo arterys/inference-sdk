@@ -12,7 +12,6 @@ import argparse
 import os
 import requests
 import json
-import pickle
 
 from pathlib import Path
 from email.mime.multipart import MIMEMultipart
