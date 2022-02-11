@@ -12,7 +12,7 @@ class Test3DSegmentation(MockServerTestCase):
     test_name = '3D segmentation test'
 
     def testOutputFiles(self):
-        input_files = [] # use walk to handle nested input folder
+        input_files = [] # use os.walk to handle nested input folder
         for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
             input_files += f
         result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
