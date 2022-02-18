@@ -12,7 +12,9 @@ class Test2DSegmentation(MockServerTestCase):
     test_name = '2D segmentation test'
 
     def testOutputFiles(self):
-        input_files = os.listdir(os.path.join('tests/data', self.input_dir))
+        input_files = [] # use os.walk to handle nested input folder
+        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
+            input_files += f
         result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
             cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')

@@ -84,26 +84,16 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
     """
     images, masks = _get_images_and_masks(dicom_images, inference_results)
     create_folder(output_folder)
-
-    # Filter out secondary capture outputs
     all_mask_parts = filter_mask_parts(response_json)
-    binary_masks, secondary_captures = filter_masks_by_binary_type(masks, all_mask_parts, response_json)
 
-    # Create DICOM files for secondary capture outputs
-    for index, sc in enumerate(secondary_captures):
-        dcm = pydicom.read_file(BytesIO(sc.tobytes()))
-        file_path = os.path.join(output_folder, 'sc_' + str(index) + '.dcm')
-        pydicom.dcmwrite(file_path, dcm)
-
-    if len(binary_masks) > 0:
+    if len(masks) > 0:
         offset = 0
-
         images_by_series = group_by_series(images)
         series = images_by_series.keys()
-
+        index = 0
         for series_uid in series:
             offset = 0
-            for index, image in enumerate(images_by_series[series_uid]):
+            for image in images_by_series[series_uid]:
                 dcm = pydicom.dcmread(image.path)
                 pixels = get_pixels(dcm)
 
@@ -111,7 +101,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                 pixels = np.reshape(pixels, (-1, 3))
                 pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
 
-                for mask_index, (mask, json_part) in enumerate(zip(binary_masks, all_mask_parts)):
+                for mask_index, (mask, json_part) in enumerate(zip(masks, all_mask_parts)):
                     # If the input holds multiple timepoints but the result only includes 1 timepoint
                     if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape']['timepoints'] == 1:
                         continue
@@ -132,6 +122,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                     pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
                 pixels = np.reshape(pixels, (dcm.Rows, dcm.Columns, 4))
                 plt.imsave(output_filename, pixels)
+                index += 1
 
 
 def generate_images_for_single_image_masks(dicom_images, inference_results, response_json, output_folder):
