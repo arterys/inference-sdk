@@ -32,7 +32,7 @@ from utils import load_image_data, sort_images
 def save_secondary_captures(json_response, output_folder_path, multipart_data):
     secondary_capture_parts = [
         p for p in json_response['parts'] if p['binary_type'] in
-        ['dicom', 'dicom_structured_report', 'dicom_secondary_capture']
+        DICOM_BINARY_TYPES
     ]
 
     # Create DICOM files for secondary capture outputs
