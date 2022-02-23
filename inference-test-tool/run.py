@@ -121,7 +121,10 @@ def upload_study_me(file_path,
         r = requests.post(target, data=me, headers=headers)
 
     end = timer()
-    print("Request took {} s".format(str(end - start)))
+    runtime = str(end - start)
+    print("Request took {} s".format(runtime))
+    with open("runtimes.txt", "a") as f:
+        f.write("{}\t{}\n".format(os.path.basename(os.path.normpath(file_path)), runtime))
     if r.status_code != 200:
         print("Got error status code ", r.status_code)
         exit(1)
