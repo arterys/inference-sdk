@@ -216,7 +216,7 @@ def parse_request_options(items):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", help="Path to dicom directory to upload.")
+    parser.add_argument("-i", "--input", help="Path to dicom directory to upload.", nargs='+')
     parser.add_argument("-l", "--include_label_plots", default=False, help="If the model's output are labels and they should be plotted"
         "on top of the .png files.", action='store_true')
     parser.add_argument("--host", default='0.0.0.0', help="Host where inference SDK is hosted")
@@ -244,7 +244,8 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     request_options = parse_request_options(args.request_options)
-    upload_study_me(args.input,
+    input_path = ' '.join(args.input)
+    upload_study_me(input_path,
                     args.host,
                     args.port,
                     args.output,
