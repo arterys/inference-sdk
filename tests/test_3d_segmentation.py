@@ -3,9 +3,7 @@ import json
 import subprocess
 import numpy as np
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors
-
-DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom', 'dicom_structured_report', 'dicom_gsps'}
+from .utils import term_colors, DICOM_BINARY_TYPES
 class Test3DSegmentation(MockServerTestCase):
     input_dir = 'test_3d/'
     output_dir = 'test_3d_out/'
