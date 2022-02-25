@@ -52,7 +52,7 @@ class Test2DSegmentation(MockServerTestCase):
                not in DICOM_BINARY_TYPES]
         self.assertEqual(count_masks, len(segmentation_masks_parts))
 
-        for index, part in enumerate(data['parts']):
+        for index, part in enumerate(segmentation_masks_parts):
             self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
             self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
