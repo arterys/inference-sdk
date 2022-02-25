@@ -3,8 +3,7 @@ import json
 import subprocess
 import numpy as np
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors
-
+from .utils import term_colors, DICOM_BINARY_TYPES
 class Test2DSegmentation(MockServerTestCase):
     input_dir = 'test_2d/'
     output_dir = 'test_2d_out/'
@@ -47,9 +46,11 @@ class Test2DSegmentation(MockServerTestCase):
         # Test if the amount of binary buffers is equals to the elements in `parts`
         output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
-        self.assertEqual(count_masks, len(data['parts']))
+        segmentation_masks_parts = [part for part in data['parts'] if part['binary_type']
+               not in DICOM_BINARY_TYPES]
+        self.assertEqual(count_masks, len(segmentation_masks_parts))
 
-        for index, part in enumerate(data['parts']):
+        for index, part in enumerate(segmentation_masks_parts):
             self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
             self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],

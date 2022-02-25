@@ -3,8 +3,7 @@ import json
 import subprocess
 import numpy as np
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors
-
+from .utils import term_colors, DICOM_BINARY_TYPES
 class Test3DSegmentation(MockServerTestCase):
     input_dir = 'test_3d/'
     output_dir = 'test_3d_out/'
@@ -48,7 +47,7 @@ class Test3DSegmentation(MockServerTestCase):
         output_files = os.listdir(output_folder_path)
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
         segmentation_masks_parts = [part for part in data['parts'] if part['binary_type']
-                in ['probability_mask', 'boolean_mask', 'numeric_label_mask']]
+               not in DICOM_BINARY_TYPES]
         self.assertEqual(count_masks, len(segmentation_masks_parts))
 
         for index, part in enumerate(segmentation_masks_parts):

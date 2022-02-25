@@ -8,3 +8,5 @@ class term_colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom', 'dicom_structured_report', 'dicom_gsps'}
