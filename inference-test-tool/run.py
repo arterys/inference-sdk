@@ -121,7 +121,7 @@ def upload_study_me(file_path,
     multipart_data = decoder.MultipartDecoder.from_response(r)
 
     json_response = json.loads(multipart_data.parts[0].text)
-    print("JSON response:", json_response)
+    print("JSON response:", json.dumps(json_response, indent=2))
 
     last_part = multipart_data.parts[-1]
     has_digests = last_part.headers[b'Content-Type'] == b'text/plain' and \

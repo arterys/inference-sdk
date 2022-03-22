@@ -175,5 +175,5 @@ def ensure_column_major_order(content: BinaryIO, binary_data_shape: Dict[str, in
     width = binary_data_shape['width']
     # viewer expects row major ordering (C-contiguous), while it is unclear in which order the docker container
     # returns data. We need to force it to be in column major order (= F-contiguous)
-    mask = np.reshape(np.frombuffer(content, dtype=np.uint8), (height, depth, width)).ravel(order='F')
+    mask = np.reshape(np.frombuffer(content, dtype=np.uint8), (depth, height, width)).ravel(order='F')
     return mask
