@@ -3,8 +3,7 @@ This script lets you test if the inference outputs will be processed correctly b
 """
 
 import os
-import argparse
-import random
+
 from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt

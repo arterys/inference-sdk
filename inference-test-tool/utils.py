@@ -1,9 +1,10 @@
 import os
+from typing import BinaryIO, Dict
+
 import tempfile
 import itertools
 from operator import attrgetter
 from functools import cmp_to_key
-from pathlib import Path
 import pydicom
 from pydicom.errors import InvalidDicomError
 from pydicom.pixel_data_handlers.util import apply_color_lut, convert_color_space
@@ -166,3 +167,13 @@ def get_pixels(dicom_file):
 def create_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
+
+
+def ensure_column_major_order(content: BinaryIO, binary_data_shape: Dict[str, int]):
+    depth = binary_data_shape['depth']
+    height = binary_data_shape['height']
+    width = binary_data_shape['width']
+    # viewer expects row major ordering (C-contiguous), while it is unclear in which order the docker container
+    # returns data. We need to force it to be in column major order (= F-contiguous)
+    mask = np.reshape(np.frombuffer(content, dtype=np.uint8), (height, depth, width)).ravel(order='F')
+    return mask
