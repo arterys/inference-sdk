@@ -170,10 +170,15 @@ def create_folder(folder):
 
 
 def ensure_column_major_order(content: BinaryIO, binary_data_shape: Dict[str, int]):
-    depth = binary_data_shape['depth']
     height = binary_data_shape['height']
     width = binary_data_shape['width']
+
+    if 'depth' in binary_data_shape:
+        depth = binary_data_shape['depth']
+        new_shape = (depth, height, width)
+    else:
+        new_shape = (height, width)
     # viewer expects row major ordering (C-contiguous), while it is unclear in which order the docker container
     # returns data. We need to force it to be in column major order (= F-contiguous)
-    mask = np.reshape(np.frombuffer(content, dtype=np.uint8), (depth, height, width)).ravel(order='F')
+    mask = np.reshape(np.frombuffer(content, dtype=np.uint8), new_shape).ravel(order='F')
     return mask
