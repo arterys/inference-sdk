@@ -13,12 +13,13 @@ import os
 import requests
 import json
 
+import numpy as np
 from requests_toolbelt import MultipartEncoder
 from requests_toolbelt.multipart import decoder
 import pydicom
 
 import test_inference_mask, test_inference_boxes, test_inference_classification
-from utils import create_folder, DICOM_BINARY_TYPES, ensure_column_major_order
+from utils import create_folder, DICOM_BINARY_TYPES
 
 
 from utils import load_image_data, sort_images
@@ -136,7 +137,7 @@ def upload_study_me(file_path,
         "The server must return one binary buffer for each object in `parts`. Got {} buffers and {} 'parts' objects" \
         .format(len(multipart_data.parts) - non_buffer_count, mask_count)
 
-    masks = [ensure_column_major_order(p.content, json_response['parts'][i]['binary_data_shape']) for i, p in enumerate(multipart_data.parts[1:mask_count+1])
+    masks = [np.frombuffer(p.content, dtype=np.uint8) for i, p in enumerate(multipart_data.parts[1:mask_count+1])
              if json_response['parts'][i]['binary_type'] not in DICOM_BINARY_TYPES]
 
     if images[0].position is None and \

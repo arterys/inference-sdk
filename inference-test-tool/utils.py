@@ -11,6 +11,7 @@ from pydicom.pixel_data_handlers.util import apply_color_lut, convert_color_spac
 import numpy as np
 import SimpleITK as sitk
 from PIL import Image
+from PIL import UnidentifiedImageError
 
 DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom', 'dicom_structured_report', 'dicom_gsps'}
 
@@ -71,9 +72,11 @@ def load_image_data(folder):
             except InvalidDicomError:
                 # File is not a valid Dicom file. Assume it is an
                 # image, convert it to Dicom, and retry loading it.
-                file_path = convert_image_to_dicom(file_path)
-                dcm = pydicom.dcmread(file_path)
-
+                try:
+                    file_path = convert_image_to_dicom(file_path)
+                    dcm = pydicom.dcmread(file_path)
+                except UnidentifiedImageError:
+                    continue
             images.append(DCM_Image(dcm, file_path))
         elif os.path.isdir(file_path):
             images.extend(load_image_data(file_path))
@@ -168,17 +171,3 @@ def create_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-
-def ensure_column_major_order(content: BinaryIO, binary_data_shape: Dict[str, int]):
-    height = binary_data_shape['height']
-    width = binary_data_shape['width']
-
-    if 'depth' in binary_data_shape:
-        depth = binary_data_shape['depth']
-        new_shape = (depth, height, width)
-    else:
-        new_shape = (height, width)
-    # viewer expects row major ordering (C-contiguous), while it is unclear in which order the docker container
-    # returns data. We need to force it to be in column major order (= F-contiguous)
-    mask = np.reshape(np.frombuffer(content, dtype=np.uint8), new_shape).ravel(order='F')
-    return mask

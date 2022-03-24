@@ -108,10 +108,12 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                         # This mask does not apply to this series
                         continue
                     # get mask for this image
-                    image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
+                    height = json_part['binary_data_shape']['height']
+                    width = json_part['binary_data_shape']['width']
+                    image_mask = mask[offset: offset + height*width]
                     pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
 
-                offset += dcm.Rows * dcm.Columns
+                offset += height * width
 
                 # write image to output folder
                 output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
