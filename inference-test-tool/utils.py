@@ -89,7 +89,6 @@ def sort_images(images):
 
 def group_by_series(images):
     series_attr = attrgetter('seriesUID')
-    print(images)
     return {k: list(g) for k, g in itertools.groupby(sorted(images, key=series_attr), series_attr)}
 
 

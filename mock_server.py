@@ -6,7 +6,12 @@ bounding box or classification labels correspondingly when an inference reuqest 
 """
 
 import argparse
+import functools
+import json
+import logging
 import logging.config
+import os
+import tempfile
 import yaml
 
 import numpy
@@ -98,7 +103,7 @@ def get_probability_mask_3D_response(json_input, dicom_instances):
                     'width': image_width,
                     'height': image_height
                 },
-                'seriesUID': dcm.SeriesInstanceUID
+                'SeriesInstanceUID': dcm.SeriesInstanceUID
             }
         ]
     }

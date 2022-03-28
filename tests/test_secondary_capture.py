@@ -1,6 +1,7 @@
 import os
 import json
 import subprocess
+import numpy as np
 import pydicom
 from pydicom.errors import InvalidDicomError
 from .mock_server_test_case import MockServerTestCase
@@ -18,7 +19,7 @@ class TestSecondaryCapture(MockServerTestCase):
             input_files += f
         result = subprocess.run(['./send-inference-request.sh', '--host=0.0.0.0', '--port=' +
             self.inference_port, '--output=' + self.output_dir, '--input=' + self.input_dir] + self.additional_flags.split(),
-            cwd='inference_test_tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
 
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")

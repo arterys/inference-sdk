@@ -6,9 +6,9 @@ import os
 import argparse
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import pydicom
-from utils import get_pixels
+from utils import load_image_data, get_pixels
 
 def generate_images_with_labels(images, json_response, output_folder):
     """ Generates png images with classification labels plotted on top.

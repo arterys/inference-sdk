@@ -8,11 +8,7 @@ from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
-try:
-    from inference_test_tool.utils import load_image_data, sort_images, create_folder, get_pixels, group_by_series, filter_masks_by_binary_type, filter_mask_parts
-except:
-    from utils import load_image_data, sort_images, create_folder, get_pixels, group_by_series, filter_masks_by_binary_type, filter_mask_parts
-
+from utils import load_image_data, sort_images, create_folder, get_pixels, group_by_series, filter_masks_by_binary_type, filter_mask_parts
 import cv2
 
 colors = [[1, 0, 0],

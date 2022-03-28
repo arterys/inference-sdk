@@ -1,18 +1,9 @@
 import os
 import json
 import subprocess
-from glob import glob
-
 import numpy as np
-import pydicom
-
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors, DICOM_BINARY_TYPES
-
-from mock_server import get_probability_mask_3D_response
-from inference_test_tool.test_inference_mask import generate_images_with_masks
-
-
 class Test3DSegmentation(MockServerTestCase):
     input_dir = 'test_3d/'
     output_dir = 'test_3d_out/'
@@ -25,7 +16,7 @@ class Test3DSegmentation(MockServerTestCase):
             input_files += f
         result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
-            cwd='inference_test_tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
 
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")
@@ -55,7 +46,8 @@ class Test3DSegmentation(MockServerTestCase):
         output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
         output_files = os.listdir(output_folder_path)
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
-        segmentation_masks_parts = [part for part in data['parts'] if part['binary_type'] not in DICOM_BINARY_TYPES]
+        segmentation_masks_parts = [part for part in data['parts'] if part['binary_type']
+               not in DICOM_BINARY_TYPES]
         self.assertEqual(count_masks, len(segmentation_masks_parts))
 
         for index, part in enumerate(segmentation_masks_parts):
@@ -82,20 +74,4 @@ class Test3DSegmentation(MockServerTestCase):
             elif part['binary_type'] == 'numeric_label_mask':
                 self.validate_numeric_label_mask(part, mask)
 
-        print(term_colors.OKGREEN + "3D segmentation test part 1 succeeded!!", term_colors.ENDC)
-
-        # test for throwing AssertionError when the dimensions are mixed up
-        dicom_instance_paths = glob(os.path.join('tests/data', self.input_dir + '/*.dcm'))
-        with open(dicom_instance_paths[0], 'rb') as dicom_file:
-            image = pydicom.read_file(dicom_file).pixel_array
-            json_input = {
-                'width': 1,
-                'height': image.shape[1],
-                'depth': image.shape[0]
-            }
-
-            mock_response, mask = get_probability_mask_3D_response(json_input, dicom_instance_paths)
-            self.assertRaises(AssertionError, lambda: generate_images_with_masks(os.path.join('tests/data', self.input_dir), mask, mock_response, self.output_dir))
-
-            print(term_colors.OKGREEN + "3D Segmentation test part 2 succeeded!!", term_colors.ENDC)
-
+        print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)

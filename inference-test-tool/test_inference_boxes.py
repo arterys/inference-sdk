@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 from PIL import Image, ImageDraw
 import pydicom
-from utils import create_folder, get_pixels
+from utils import load_image_data, create_folder, get_pixels
 
 def generate_images_with_boxes(images, boxes, output_folder):
     # Generate images for boxes. `boxes` should be an array of dict
