@@ -1,9 +1,9 @@
 import os
-
 import tempfile
 import itertools
 from operator import attrgetter
 from functools import cmp_to_key
+from pathlib import Path
 import pydicom
 from pydicom.errors import InvalidDicomError
 from pydicom.pixel_data_handlers.util import apply_color_lut, convert_color_space

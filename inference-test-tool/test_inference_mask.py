@@ -3,7 +3,8 @@ This script lets you test if the inference outputs will be processed correctly b
 """
 
 import os
-
+import argparse
+import random
 from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
@@ -108,12 +109,10 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                         # This mask does not apply to this series
                         continue
                     # get mask for this image
-                    height = json_part['binary_data_shape']['height']
-                    width = json_part['binary_data_shape']['width']
-                    image_mask = mask[offset: offset + height*width]
+                    image_mask = mask[offset : offset + dcm.Rows * dcm.Columns]
                     pixels = _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index, mask_index)
 
-                offset += height * width
+                offset += dcm.Rows * dcm.Columns
 
                 # write image to output folder
                 output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
