@@ -13,15 +13,11 @@ import os
 import requests
 import json
 
-from pathlib import Path
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from email.mime.text import MIMEText
-from base64 import b64encode
+import numpy as np
 from requests_toolbelt import MultipartEncoder
 from requests_toolbelt.multipart import decoder
 import pydicom
-import numpy as np
+
 import test_inference_mask, test_inference_boxes, test_inference_classification
 from utils import create_folder, DICOM_BINARY_TYPES
 
@@ -126,7 +122,7 @@ def upload_study_me(file_path,
     multipart_data = decoder.MultipartDecoder.from_response(r)
 
     json_response = json.loads(multipart_data.parts[0].text)
-    print("JSON response:", json_response)
+    print("JSON response:", json.dumps(json_response, indent=2))
 
     last_part = multipart_data.parts[-1]
     has_digests = last_part.headers[b'Content-Type'] == b'text/plain' and \
@@ -234,6 +230,7 @@ def parse_args():
     args = parser.parse_args()
 
     return args
+
 
 if __name__ == '__main__':
     args = parse_args()
