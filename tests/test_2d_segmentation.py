@@ -4,6 +4,8 @@ import subprocess
 import numpy as np
 from .mock_server_test_case import MockServerTestCase
 from .utils import term_colors, DICOM_BINARY_TYPES
+
+
 class Test2DSegmentation(MockServerTestCase):
     input_dir = 'test_2d/'
     output_dir = 'test_2d_out/'
@@ -16,7 +18,7 @@ class Test2DSegmentation(MockServerTestCase):
             input_files += f
         result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
             self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
-            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+            cwd='inference_test_tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
 
         # Test that the command executed successfully
         self.check_success(result, command_name="Send inference request")

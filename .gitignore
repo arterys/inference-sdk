@@ -1,6 +1,6 @@
 *~
 *.pyc
-inference-test-tool/**/*.dcm
-inference-test-tool/**/*.png
-inference-test-tool/**/*.jpeg
-inference-test-tool/output/
+inference_test_tool/**/*.dcm
+inference_test_tool/**/*.png
+inference_test_tool/**/*.jpeg
+../inference_test_tool/output/

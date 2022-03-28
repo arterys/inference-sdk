@@ -1,15 +1,15 @@
 import os
 import requests
 import subprocess
-import sys
 import time
 import unittest
 import shutil
 from distutils.dir_util import copy_tree
 from .utils import term_colors
 
+
 class MockServerTestCase(unittest.TestCase):
-    inference_test_dir = 'inference-test-tool'
+    inference_test_dir = 'inference_test_tool'
     input_dir = 'in/'
     output_dir = 'out/'
     command = ''
