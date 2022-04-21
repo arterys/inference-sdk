@@ -1,11 +1,11 @@
 import os
 import json
 import subprocess
-import numpy as np
 import pydicom
 from pydicom.errors import InvalidDicomError
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors
+from tests.integration_tests.utils import TermColors
+
 
 class TestSecondaryCapture(MockServerTestCase):
     input_dir = 'test_secondary_capture/'
@@ -14,18 +14,7 @@ class TestSecondaryCapture(MockServerTestCase):
     test_name = 'Secondary capture test'
 
     def testOutputFiles(self):
-        input_files = [] # use os.walk to handle nested input folder
-        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
-            input_files += f
-        result = subprocess.run(['./send-inference-request.sh', '--host=0.0.0.0', '--port=' +
-            self.inference_port, '--output=' + self.output_dir, '--input=' + self.input_dir] + self.additional_flags.split(),
-            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-
-        # Test that the command executed successfully
-        self.check_success(result, command_name="Send inference request")
-        self.assertEqual(result.returncode, 0)
-
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
+        self.run_command()
 
         # Test JSON response
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')
@@ -49,8 +38,8 @@ class TestSecondaryCapture(MockServerTestCase):
         for index, sc in enumerate(secondary_capture_parts):
             file_path = os.path.join(output_folder_path, 'sc_' + str(index) + '.dcm')
             try:
-                dcm = pydicom.dcmread(file_path)
+                pydicom.dcmread(file_path)
             except InvalidDicomError:
                 self.fail("output dcm file is invalid!")
 
-        print(term_colors.OKGREEN + "Secondary capture test succeeded!!", term_colors.ENDC)
+        print(TermColors.OKGREEN + "Secondary capture test succeeded!!", TermColors.ENDC)

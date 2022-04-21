@@ -23,10 +23,13 @@ RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
 
 # Install requirements and module code
 COPY --chown=inference-user:inference-user requirements.txt /opt/requirements.txt
+# Install requirements and module code
+COPY packages/arterys_inference_sdk-0.1.0-py3-none-any.whl /opt/packages/arterys_inference_sdk-0.1.0-py3-none-any.whl
+RUN python3.7 -m pip install packages/arterys_inference_sdk-0.1.0-py3-none-any.whl[server,test-tool]
 
 USER inference-user
 
-RUN python3 -m pip install -r /opt/requirements.txt
+# RUN python3 -m pip install -r /opt/requirements.txt
 
 ENTRYPOINT ["python3", "run.py"]
 CMD ["--help"]

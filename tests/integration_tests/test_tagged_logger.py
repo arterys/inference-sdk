@@ -1,11 +1,13 @@
 import unittest
 import logging
 
-from utils.tagged_logger import TaggedLogger
+from arterys_sdk.utils.tagged_logger import TaggedLogger
+
 
 class TestLogHandler(logging.Handler):
     def emit(self, record):
         self.record = record
+
 
 class TestTaggedLogger(unittest.TestCase):
     handler = TestLogHandler()
@@ -98,6 +100,7 @@ class TestTaggedLogger(unittest.TestCase):
         child.debug("abcijkxyz tagged message")
         self.assertLevel("DEBUG")
         self.assertMessage('{"a": 1, "b": 2, "c": 3, "i": "i", "j": "j", "k": "k", "x": "x", "y": "y", "z": "z"} - abcijkxyz tagged message')
+
 
 if __name__ == "__main__":
     unittest.main()

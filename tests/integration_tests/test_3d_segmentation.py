@@ -3,30 +3,20 @@ import json
 import subprocess
 import numpy as np
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors, DICOM_BINARY_TYPES
-class Test2DSegmentation(MockServerTestCase):
-    input_dir = 'test_2d/'
-    output_dir = 'test_2d_out/'
-    command = '-s2D'
-    test_name = '2D segmentation test'
+from tests.integration_tests.utils import TermColors, DICOM_BINARY_TYPES
+
+
+class Test3DSegmentation(MockServerTestCase):
+    input_dir = 'test_3d/'
+    output_dir = 'test_3d_out/'
+    command = '-s3D'
+    test_name = '3D segmentation test'
 
     def testOutputFiles(self):
-        input_files = [] # use os.walk to handle nested input folder
-        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
-            input_files += f
-        result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
-            self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
-            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+        input_files, output_files = self.run_command()
 
-        # Test that the command executed successfully
-        self.check_success(result, command_name="Send inference request")
-        self.assertEqual(result.returncode, 0)
-
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
-
-        # Test that there is one binary mask saved per input image
-        for (i, name) in enumerate(input_files):
-            self.assertTrue('output_masks_{}.npy'.format(i + 1) in output_files)
+        # Test that there is one binary mask saved
+        self.assertTrue('output_masks_1.npy' in output_files)
 
         # Test that there was one PNG image generated for each input image
         output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
@@ -44,14 +34,14 @@ class Test2DSegmentation(MockServerTestCase):
         self.assertIn('parts', data)
 
         # Test if the amount of binary buffers is equals to the elements in `parts`
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
+        output_folder_path = os.path.join(self.inference_test_dir, self.output_dir)
+        output_files = os.listdir(output_folder_path)
         count_masks = len([f for f in output_files if f.startswith("output_masks_")])
         segmentation_masks_parts = [part for part in data['parts'] if part['binary_type']
                not in DICOM_BINARY_TYPES]
         self.assertEqual(count_masks, len(segmentation_masks_parts))
 
         for index, part in enumerate(segmentation_masks_parts):
-            self.assertIsInstance(part['label'], str)
             self.assertIsInstance(part['binary_type'], str)
             self.assertIn(part['binary_type'], ['heatmap', 'numeric_label_mask', 'dicom_secondary_capture', 'probability_mask', 'boolean_mask'],
                 "'binary_type' is not among the supported mask types")
@@ -61,17 +51,18 @@ class Test2DSegmentation(MockServerTestCase):
 
             self.assertIn('binary_data_shape', part)
             data_shape = part['binary_data_shape']
+            self.assertIsInstance(data_shape['timepoints'], int)
+            self.assertIsInstance(data_shape['depth'], int)
             self.assertIsInstance(data_shape['width'], int)
             self.assertIsInstance(data_shape['height'], int)
-            self.assertIn('dicom_image', part)
-            self.assertIsInstance(part['dicom_image']['SOPInstanceUID'], str)
 
+            # test that the mask shape is as advertised
             mask = np.fromfile(os.path.join(self.inference_test_dir, self.output_dir, "output_masks_{}.npy".format(index + 1)), dtype=np.uint8)
-            self.assertEqual(mask.shape[0], data_shape['width'] * data_shape['height'])
+            self.assertEqual(mask.shape[0], data_shape['timepoints'] * data_shape['depth'] * data_shape['width'] * data_shape['height'])
 
             if part['binary_type'] == 'heatmap':
                 self.validate_heatmap_palettes(part, data)
             elif part['binary_type'] == 'numeric_label_mask':
                 self.validate_numeric_label_mask(part, mask)
 
-        print(term_colors.OKGREEN + "2D segmentation test succeeded!!", term_colors.ENDC)
+        print(TermColors.OKGREEN + "3D segmentation test succeeded!!", TermColors.ENDC)

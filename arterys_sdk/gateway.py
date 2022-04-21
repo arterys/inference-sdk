@@ -12,15 +12,18 @@ import numpy
 
 import flask
 from flask import Flask, make_response
-from utils import tagged_logger
 
 # pylint: disable=import-error
 # Not designed to be installed in vision, yet
 from requests_toolbelt import MultipartEncoder, MultipartDecoder
 
+from utils import tagged_logger
+
+
 logger = logging.getLogger('gateway')
 
-class InferenceSerializer():
+
+class InferenceSerializer:
     """Class to convert model outputs to HTTP-friendly binary format.
 
     Currently, could be a function, but this will likely grow in complexity
@@ -250,4 +253,4 @@ class Gateway(Flask):
             # (filename, data, Content-Type header)
             content_tuple = (field_name, content_string, content_type)
 
-        return (field_name, content_tuple)
+        return field_name, content_tuple

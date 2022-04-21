@@ -2,7 +2,8 @@ import os
 import json
 import subprocess
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors
+from tests.integration_tests.utils import TermColors
+
 
 class TestBoundingBox(MockServerTestCase):
     input_dir = 'test_box/'
@@ -11,23 +12,7 @@ class TestBoundingBox(MockServerTestCase):
     test_name = 'Bounding box test'
 
     def testOutputFiles(self):
-        input_files = [] # use walk to handle nested input folder
-        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
-            input_files += f
-        result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
-            self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
-            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-
-        # Test that the command executed successfully
-        self.check_success(result, command_name="Send inference request")
-        self.assertEqual(result.returncode, 0)
-
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
-
-        # Test that there was one PNG image generated for each input image
-        output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
-        for name in input_files:
-            self.assertTrue((name + '.png') in output_no_index)
+        self.run_command()
 
         # Test JSON file contents
         file_path = os.path.join(self.inference_test_dir, self.output_dir, 'response.json')
@@ -49,4 +34,4 @@ class TestBoundingBox(MockServerTestCase):
             self.assertEqual(2, len(box['top_left']))
             self.assertEqual(2, len(box['bottom_right']))
 
-        print(term_colors.OKGREEN + "Bounding box test succeeded!!", term_colors.ENDC)
+        print(TermColors.OKGREEN + "Bounding box test succeeded!!", TermColors.ENDC)

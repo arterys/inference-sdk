@@ -1,5 +1,8 @@
+from contextlib import contextmanager
+import os
 
-class term_colors:
+
+class TermColors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -9,4 +12,15 @@ class term_colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 DICOM_BINARY_TYPES = {'dicom_secondary_capture', 'dicom', 'dicom_structured_report', 'dicom_gsps'}
+
+
+@contextmanager
+def cd(newdir):
+    prevdir = os.getcwd()
+    os.chdir(os.path.expanduser(newdir))
+    try:
+        yield
+    finally:
+        os.chdir(prevdir)

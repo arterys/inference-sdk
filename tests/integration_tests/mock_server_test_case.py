@@ -1,15 +1,15 @@
 import os
 import requests
 import subprocess
-import sys
 import time
 import unittest
 import shutil
 from distutils.dir_util import copy_tree
-from .utils import term_colors
+from tests.integration_tests.utils import TermColors, cd
+
 
 class MockServerTestCase(unittest.TestCase):
-    inference_test_dir = 'inference-test-tool'
+    inference_test_dir = 'arterys_sdk/inference_test_tool'
     input_dir = 'in/'
     output_dir = 'out/'
     command = ''
@@ -19,12 +19,34 @@ class MockServerTestCase(unittest.TestCase):
     inference_port = '8900'
     additional_flags = ""
 
+    def run_command(self):
+        input_files = []  # use os.walk to handle nested input folder
+        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
+            input_files += f
+        result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
+                                 self.inference_port, '-o', self.output_dir, '-i',
+                                 self.input_dir] + self.additional_flags.split(),
+                                cwd='./arterys_sdk/inference_test_tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                encoding='utf-8')
+
+        # Test that the command executed successfully
+        self.check_success(result, command_name="Send inference request")
+        self.assertEqual(result.returncode, 0)
+        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
+
+        output_no_index = [name[name.index('_') + 1:] for name in output_files if name.endswith('.png')]
+        for name in input_files:
+            self.assertTrue((name + '.png') in output_no_index)
+        return input_files, output_files
+
     def setUp(self):
         should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
-        if should_start_server:
+        if True:
             print("Starting", self.test_name)
-            self.server_proc = subprocess.Popen(["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, encoding='utf-8')
+            with cd('./arterys_sdk'):
+                self.server_proc = subprocess.Popen(
+                    ["./start_server.sh", self.command, "--name", self.test_container_name], stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, encoding='utf-8')
         else:
             self.inference_port = os.getenv('ARTERYS_SDK_INFERENCE_SERVER_PORT', '8900')
             print("Assuming the server is already running.")
@@ -38,7 +60,7 @@ class MockServerTestCase(unittest.TestCase):
         healthcheck_method = os.getenv('ARTERYS_SDK_HEALTHCHECK_METHOD', "GET")
 
         def cleanup():
-            print(term_colors.OKBLUE + "Performing clean up. Stopping inference server...\n", term_colors.ENDC)
+            print(TermColors.OKBLUE + "Performing clean up. Stopping inference server...\n", TermColors.ENDC)
 
             self.stop_service()
             if os.path.exists(os.path.join(self.inference_test_dir, self.output_dir)):
@@ -72,21 +94,21 @@ class MockServerTestCase(unittest.TestCase):
     def stop_service(self, print_output=False):
         if self.server_proc is not None:
             subprocess.run(["docker", "stop", self.test_container_name],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.server_proc.terminate()
             out, err = self.server_proc.communicate()
             self.server_proc = None
             if print_output:
-                print(term_colors.FAIL + "Inference server stderr:", term_colors.ENDC)
+                print(TermColors.FAIL + "Inference server stderr:", TermColors.ENDC)
                 print(err)
-                print(term_colors.FAIL + "Inference server stdout:", term_colors.ENDC)
+                print(TermColors.FAIL + "Inference server stdout:", TermColors.ENDC)
                 print(out)
 
     def check_success(self, result, command_name="Subprocess"):
         if result.returncode != 0:
-            print(term_colors.FAIL + command_name, "failed with stderr:", term_colors.ENDC)
+            print(TermColors.FAIL + command_name, "failed with stderr:", TermColors.ENDC)
             print(result.stderr)
-            print(term_colors.FAIL + "And stdout:", term_colors.ENDC)
+            print(TermColors.FAIL + "And stdout:", TermColors.ENDC)
             print(result.stdout)
             print('Stopping service due to failure...')
             self.stop_service(True)
@@ -106,7 +128,8 @@ class MockServerTestCase(unittest.TestCase):
             self.assertIn('data', palette)
             self.assertIsInstance(palette['data'], list, "'data' must be a list")
             self.assertEqual(palette['type'], 'anchorpoints', "'anchorpoints' is the only supported palette type")
-            self.assertGreaterEqual(len(palette['data']), 2, "There must be at least 2 anchorpoints in a 'anchorpoints' palette")
+            self.assertGreaterEqual(len(palette['data']), 2,
+                                    "There must be at least 2 anchorpoints in a 'anchorpoints' palette")
             for ap in palette['data']:
                 self.assertIn('threshold', ap, "Anchorpoint must include 'threshold'")
                 self.assertIn('color', ap, "Anchorpoint must include 'color'")

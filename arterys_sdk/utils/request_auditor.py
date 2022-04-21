@@ -4,14 +4,10 @@ for auditing and traceability.
 """
 
 import boto3
-import hashlib
-import json
 import logging
 import os
 
-from utils import tagged_logger
-from random import choice
-from string import ascii_uppercase
+from arterys_sdk.utils import tagged_logger
 
 S3_AUDIT_BUCKET_NAME=os.environ['S3_AUDIT_BUCKET_NAME']
 
