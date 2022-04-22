@@ -29,7 +29,5 @@ RUN python3.7 -m pip install packages/arterys_inference_sdk-0.1.0-py3-none-any.w
 
 USER inference-user
 
-# RUN python3 -m pip install -r /opt/requirements.txt
-
 ENTRYPOINT ["python3", "run.py"]
 CMD ["--help"]

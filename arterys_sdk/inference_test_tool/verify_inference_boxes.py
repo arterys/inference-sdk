@@ -12,8 +12,10 @@ from utils import create_folder, get_pixels
 
 
 def generate_images_with_boxes(images, boxes, output_folder):
-    # Generate images for boxes. `boxes` should be an array of dict
-    # Format: {'label': '?', 'SOPInstanceUID': dcm.SOPInstanceUID, 'top_left': [5, 5], 'bottom_right': [10, 10]}
+    """Generate images for boxes. `boxes` should be an array of dict
+
+    Format: {'label': '?', 'SOPInstanceUID': dcm.SOPInstanceUID, 'top_left': [5, 5], 'bottom_right': [10, 10]}
+    """
     create_folder(output_folder)
 
     for index, image in enumerate(images):

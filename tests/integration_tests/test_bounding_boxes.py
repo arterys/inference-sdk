@@ -1,6 +1,5 @@
 import os
 import json
-import subprocess
 from .mock_server_test_case import MockServerTestCase
 from tests.integration_tests.utils import TermColors
 

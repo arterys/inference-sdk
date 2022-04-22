@@ -41,7 +41,7 @@ class MockServerTestCase(unittest.TestCase):
 
     def setUp(self):
         should_start_server = not os.getenv('ARTERYS_SDK_ASSUME_SERVER_STARTED', False)
-        if True:
+        if should_start_server:
             print("Starting", self.test_name)
             with cd('./arterys_sdk'):
                 self.server_proc = subprocess.Popen(

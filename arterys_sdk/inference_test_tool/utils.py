@@ -14,7 +14,7 @@ import SimpleITK as sitk
 from PIL import Image
 
 from arterys_sdk.inference_test_tool.constants import DICOM_BINARY_TYPES
-# from constants import DICOM_BINARY_TYPES
+
 
 class DcmImage:
     def __init__(self, dcm, path):
@@ -175,6 +175,6 @@ def get_pixels(dicom_file: pydicom.dataset.FileDataset) -> np.ndarray:
     return pixels
 
 
-def create_folder(folder):
+def create_folder(folder: Union[str, os.PathLike]) -> None:
     if not os.path.exists(folder):
         os.makedirs(folder)

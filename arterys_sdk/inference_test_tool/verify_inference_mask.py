@@ -3,16 +3,17 @@ This script lets you test if the inference outputs will be processed correctly b
 """
 
 import os
-
 from io import BytesIO
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict, Any
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
-from utils import (load_image_data, sort_images, create_folder, get_pixels, group_by_series,
-                   filter_masks_by_binary_type, filter_mask_parts)
 import cv2
+
+from utils import (load_image_data, sort_images, create_folder, get_pixels, group_by_series,
+                   filter_masks_by_binary_type, filter_mask_parts, DcmImage)
+
 
 colors = [[1, 0, 0],
           [0, 1, 0],
@@ -65,23 +66,32 @@ def create_lut_from_anchorpoints(anchorpoints):
     return lut
 
 
-def get_images_and_masks(dicom_images: Union[str, List[pydicom.dataset.FileDataset]],
+def get_images_and_masks(dicom_images: Union[str, List[DcmImage]],
                          inference_results: Union[str, List[np.ndarray]]
                          ) -> Tuple[List[pydicom.dataset.FileDataset], np.ndarray]:
+
     if isinstance(dicom_images, str):
         images = load_image_data(dicom_images)
         images = sort_images(images)
-    else:
+    elif all([isinstance(img, DcmImage) for img in dicom_images]):
         images = dicom_images
+    else:
+        raise ValueError("Unsupported data format, dicom images must be either path to a folder or "
+                         "list of utils.DcmImage instances ")
 
     if isinstance(inference_results, str):
         masks = np.array(np.fromfile(inference_results, dtype=np.uint8))
-    else:
+    elif all([isinstance(result, np.ndarray) for result in inference_results]):
         masks = inference_results
+    else:
+        raise ValueError("Unsupported data format, mask inference results must be list of mask "
+                         "buffers (one for each image), or path to folder with a numpy file containing one mask ")
     return images, masks
 
 
-def generate_images_with_masks(dicom_images, inference_results, response_json, output_folder):
+def generate_images_with_masks(dicom_images: Union[str, List[pydicom.dataset.FileDataset]],
+                               inference_results: Union[str, List[np.ndarray]],
+                               response_json: Dict[str, Any], output_folder: Union[str, os.PathLike]):
     """ This function will save images to disk to preview how a mask looks on the input images.
         It saves one image for each input DICOM file. All masks in `inference_results` will be applied to the
         whole 3D volume of DICOM images. Each mask will show in a different color.
@@ -109,6 +119,7 @@ def generate_images_with_masks(dicom_images, inference_results, response_json, o
                 pixels = np.reshape(pixels, (-1, 3))
                 pixels = np.hstack((pixels, np.reshape(np.full(pixels.shape[0], 255, dtype=np.uint8), (-1, 1))))
 
+                height, width = 0, 0
                 for mask_index, (mask, json_part) in enumerate(zip(masks, all_mask_parts)):
                     # If the input holds multiple timepoints but the result only includes 1 timepoint
                     if image.timepoint is not None and image.timepoint > 0 and json_part['binary_data_shape'][
@@ -215,6 +226,7 @@ def _draw_mask_on_image(pixels, image_mask, json_part, response_json, mask_index
 
         pixels = (pixels * (1 - mask_alpha) + np.reshape(mask_alpha * (heatmap[:, 3] / 255.0), (-1, 1)) * heatmap).astype(np.uint8)
         pixels[:, 3] = 255
+
     else:
         # Ignoring others like 'dicom_secondary_capture'
         pass

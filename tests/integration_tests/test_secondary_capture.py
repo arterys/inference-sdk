@@ -1,6 +1,5 @@
 import os
 import json
-import subprocess
 import pydicom
 from pydicom.errors import InvalidDicomError
 from .mock_server_test_case import MockServerTestCase

@@ -1,6 +1,6 @@
 """
 This script is meant to mock an inference request from Arterys to your model.
-Before executing this script, you must update arterys_sdk.py#request_handler
+Before executing this script, you must update mock_server.py#request_handler
 or implement your own server to direct the request to your model
 function (model_fn) and adjust the request literal below as necessary, then
 run the container.
@@ -47,9 +47,9 @@ def upload_study_me(file_path,
                     include_label_plots=False,
                     route='/',
                     request_study_path='',
-                    request_options={}):
-    # if request_options is None:
-    #     request_options = {}
+                    request_options=None):
+    if request_options is None:
+        request_options = {}
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
