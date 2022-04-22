@@ -1,9 +1,9 @@
 import os
 import json
-import subprocess
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors
+from tests.integration_tests.utils import TermColors
 from jsonschema import validate
+
 
 class TestClassification(MockServerTestCase):
     input_dir = 'test_classification/'
@@ -12,18 +12,8 @@ class TestClassification(MockServerTestCase):
     test_name = 'Classification test'
 
     def testOutputFiles(self):
-        input_files = [] # use os.walk to handle nested input folder
-        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
-            input_files += f
-        result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
-            self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
-            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
 
-        # Test that the command executed successfully
-        self.check_success(result, command_name="Send inference request")
-        self.assertEqual(result.returncode, 0)
-
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
+        input_files, output_files = self.run_command()
 
         # If .png files with labels should be generated export the following before
         # running tests: `export ARTERYS_TESTS_ADDITIONAL_FLAGS=-l`
@@ -61,4 +51,4 @@ class TestClassification(MockServerTestCase):
 
         validate(data, schema=schema)
 
-        print(term_colors.OKGREEN + "Classification model test succeeded!!", term_colors.ENDC)
+        print(TermColors.OKGREEN + "Classification model test succeeded!!", TermColors.ENDC)

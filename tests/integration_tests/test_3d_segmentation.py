@@ -1,9 +1,10 @@
 import os
 import json
-import subprocess
 import numpy as np
 from .mock_server_test_case import MockServerTestCase
-from .utils import term_colors, DICOM_BINARY_TYPES
+from tests.integration_tests.utils import TermColors, DICOM_BINARY_TYPES
+
+
 class Test3DSegmentation(MockServerTestCase):
     input_dir = 'test_3d/'
     output_dir = 'test_3d_out/'
@@ -11,18 +12,7 @@ class Test3DSegmentation(MockServerTestCase):
     test_name = '3D segmentation test'
 
     def testOutputFiles(self):
-        input_files = [] # use os.walk to handle nested input folder
-        for r, d, f in os.walk(os.path.join('tests/data', self.input_dir)):
-            input_files += f
-        result = subprocess.run(['./send-inference-request.sh', '--host', '0.0.0.0', '-p',
-            self.inference_port, '-o', self.output_dir, '-i', self.input_dir] + self.additional_flags.split(),
-            cwd='inference-test-tool', stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
-
-        # Test that the command executed successfully
-        self.check_success(result, command_name="Send inference request")
-        self.assertEqual(result.returncode, 0)
-
-        output_files = os.listdir(os.path.join(self.inference_test_dir, self.output_dir))
+        input_files, output_files = self.run_command()
 
         # Test that there is one binary mask saved
         self.assertTrue('output_masks_1.npy' in output_files)
@@ -74,4 +64,4 @@ class Test3DSegmentation(MockServerTestCase):
             elif part['binary_type'] == 'numeric_label_mask':
                 self.validate_numeric_label_mask(part, mask)
 
-        print(term_colors.OKGREEN + "3D segmentation test succeeded!!", term_colors.ENDC)
+        print(TermColors.OKGREEN + "3D segmentation test succeeded!!", TermColors.ENDC)

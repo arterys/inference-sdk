@@ -18,11 +18,8 @@ from requests_toolbelt import MultipartEncoder
 from requests_toolbelt.multipart import decoder
 import pydicom
 
-import test_inference_mask, test_inference_boxes, test_inference_classification
-from utils import create_folder, DICOM_BINARY_TYPES
-
-
-from utils import load_image_data, sort_images
+import verify_inference_mask, verify_inference_boxes, verify_inference_classification
+from utils import create_folder, DICOM_BINARY_TYPES, load_image_data, sort_images
 
 
 def save_secondary_captures(json_response, output_folder_path, multipart_data):
@@ -39,6 +36,7 @@ def save_secondary_captures(json_response, output_folder_path, multipart_data):
         with open(file_path, 'wb') as outfile:
             outfile.write(multipart_data.parts[index + 1].content)
 
+
 def upload_study_me(file_path,
                     host,
                     port,
@@ -49,7 +47,9 @@ def upload_study_me(file_path,
                     include_label_plots=False,
                     route='/',
                     request_study_path='',
-                    request_options={}):
+                    request_options=None):
+    if request_options is None:
+        request_options = {}
     file_dict = []
     headers = {'Content-Type': 'multipart/related; '}
 
@@ -149,9 +149,9 @@ def upload_study_me(file_path,
             image = next((img for img in images if img.instanceUID == id), None)
             if image:
                 filtered_images.append(image)
-        test_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
+        verify_inference_mask.generate_images_for_single_image_masks(filtered_images, masks, json_response, output_folder)
     else:
-        test_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
+        verify_inference_mask.generate_images_with_masks(images, masks, json_response, output_folder)
 
     if len(masks) > 0:
         print("Segmentation mask images generated in folder: {}".format(output_folder))
@@ -161,11 +161,11 @@ def upload_study_me(file_path,
 
     if 'bounding_boxes_2d' in json_response:
         boxes = json_response['bounding_boxes_2d']
-        test_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
+        verify_inference_boxes.generate_images_with_boxes(images, boxes, output_folder)
 
     create_folder(output_folder)
     if include_label_plots:
-        test_inference_classification.generate_images_with_labels(images, json_response, output_folder)
+        verify_inference_classification.generate_images_with_labels(images, json_response, output_folder)
 
     with open(os.path.join(output_folder, 'response.json'), 'w') as outfile:
         json.dump(json_response, outfile)
@@ -188,7 +188,7 @@ def parse_option(s):
     if len(items) > 1:
         # rejoin the rest:
         value = '='.join(items[1:])
-    return (key, value)
+    return key, value
 
 
 def parse_request_options(items):
@@ -234,7 +234,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    request_options = parse_request_options(args.request_options)
+    parsed_request_options = parse_request_options(args.request_options)
     upload_study_me(args.input,
                     args.host,
                     args.port,
@@ -245,4 +245,4 @@ if __name__ == '__main__':
                     args.include_label_plots,
                     args.route,
                     args.request_study_path,
-                    request_options)
+                    parsed_request_options)

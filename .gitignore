@@ -1,6 +1,5 @@
-*~
-*.pyc
-inference-test-tool/**/*.dcm
-inference-test-tool/**/*.png
-inference-test-tool/**/*.jpeg
-inference-test-tool/output/
+arterys_sdk/inference_test_tool/study_folder/
+arterys_sdk/inference_test_tool/output
+.idea/
+**/__pycache__
+*egg-info

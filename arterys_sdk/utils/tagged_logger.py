@@ -1,6 +1,7 @@
 import logging
 import json
 
+
 class TaggedLogger(logging.LoggerAdapter):
     """
     A tagged logger adapter that allows for persistent tags to be included with every log message.
@@ -38,7 +39,7 @@ class TaggedLogger(logging.LoggerAdapter):
         Add new tags to the current set of persistent tags or replace existing tags in the current
         set of persistent tags contained by this logger.
         """
-        self.tags.update(tags);
+        self.tags.update(tags)
 
     def tag(self, tags):
         """
@@ -46,5 +47,5 @@ class TaggedLogger(logging.LoggerAdapter):
         specified tags.
         """
         t = TaggedLogger(self)
-        t.add_tags(tags);
+        t.add_tags(tags)
         return t
