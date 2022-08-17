@@ -1,8 +1,8 @@
 matplotlib==3.5.3
 numpy==1.22.0
 Pillow==9.0.1
-opencv-python==4.3.0.36
+opencv-python-headless==4.6.0.66
 pydicom==1.4.1
 requests==2.22.0
 requests-toolbelt==0.9.1
-SimpleITK==1.2.4
+SimpleITK==2.1.1.2
