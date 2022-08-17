@@ -1,11 +1,12 @@
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 # Install Python3-GDCM (dependency to read pixels of certain DICOM files)
 RUN apt-get update && apt-get install -y python3-gdcm libglib2.0 libsm6 libxext6 libxrender-dev
-RUN cp /usr/lib/python3/dist-packages/gdcm.py /usr/local/lib/python3.7/site-packages/ \
-    && cp /usr/lib/python3/dist-packages/gdcmswig.py /usr/local/lib/python3.7/site-packages/ \
-    && cp /usr/lib/python3/dist-packages/_gdcmswig*.so /usr/local/lib/python3.7/site-packages/ \
-    && cp /usr/lib/x86_64-linux-gnu/libgdcm* /usr/local/lib/python3.7/site-packages/
+
+RUN cp /usr/lib/python3/dist-packages/gdcm.py /usr/local/lib/python3.10/site-packages/ \
+    && cp /usr/lib/python3/dist-packages/gdcmswig.py /usr/local/lib/python3.10/site-packages/ \
+    && cp /usr/lib/python3/dist-packages/_gdcmswig*.so /usr/local/lib/python3.10/site-packages/ \
+    && cp /usr/lib/x86_64-linux-gnu/libgdcm* /usr/local/lib/python3.10/site-packages/
 
 # Basic env setup
 WORKDIR /opt
@@ -26,6 +27,7 @@ COPY --chown=inference-user:inference-user requirements.txt /opt/requirements.tx
 
 USER inference-user
 
+RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install -r /opt/requirements.txt
 
 ENTRYPOINT ["python3", "run.py"]
