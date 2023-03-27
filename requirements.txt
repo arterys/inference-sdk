@@ -5,3 +5,4 @@ pydicom==1.4.2
 pyyaml==5.4
 requests-toolbelt==0.9.1
 SimpleITK==2.1.1.2
+h5py==2.10.0
