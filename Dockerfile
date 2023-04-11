@@ -1,19 +1,24 @@
-FROM python:3.10-slim
+FROM tensorflow/tensorflow:2.5.1-gpu
 
-# Install Python3-GDCM (dependency to read pixels of certain DICOM files)
-RUN apt-get update && apt-get install -y python3-gdcm libglib2.0 libsm6 libxext6 libxrender-dev
+WORKDIR /internal
+COPY requirements.txt ./
 
-RUN cp /usr/lib/python3/dist-packages/gdcm.py /usr/local/lib/python3.10/site-packages/ \
-    && cp /usr/lib/python3/dist-packages/gdcmswig.py /usr/local/lib/python3.10/site-packages/ \
-    && cp /usr/lib/python3/dist-packages/_gdcmswig*.so /usr/local/lib/python3.10/site-packages/ \
-    && cp /usr/lib/x86_64-linux-gnu/libgdcm* /usr/local/lib/python3.10/site-packages/
+# Workaround for:
+# W: GPG error: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64  InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A4B469963BF863CC
+# E: The repository 'https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64  InRelease' is no longer signed.
+RUN rm /etc/apt/sources.list.d/cuda.list
+RUN rm /etc/apt/sources.list.d/nvidia-ml.list
 
-# Install requirements and module code
-COPY requirements.txt /opt/requirements.txt
-RUN python3 -m pip install -r /opt/requirements.txt
+# Use virtualenv to run python3.7 as
+# other python versions give a "SystemError: unknown opcode" error
+RUN apt-get update && apt-get install -y virtualenv python3.7
+RUN virtualenv --python=/usr/bin/python3.7 venv
+RUN . venv/bin/activate && pip install -r requirements.txt
 
-# Basic env setup
+WORKDIR /workdir
+# Automatically enter the virtualenv when running the container
+ENV PATH=/internal/venv/bin:$PATH
+
 WORKDIR /opt
 COPY . /opt/
-
 ENTRYPOINT [ "python3", "mock_server.py" ]
