@@ -1,19 +1,18 @@
-FROM python:3.10-slim
+FROM tensorflow/tensorflow:2.4.1-gpu
 
-# Install Python3-GDCM (dependency to read pixels of certain DICOM files)
-RUN apt-get update && apt-get install -y python3-gdcm libglib2.0 libsm6 libxext6 libxrender-dev gcc pkg-config libhdf5-dev
+WORKDIR /internal
+COPY requirements.txt ./
 
-RUN cp /usr/lib/python3/dist-packages/gdcm.py /usr/local/lib/python3.10/site-packages/ \
-    && cp /usr/lib/python3/dist-packages/gdcmswig.py /usr/local/lib/python3.10/site-packages/ \
-    && cp /usr/lib/python3/dist-packages/_gdcmswig*.so /usr/local/lib/python3.10/site-packages/ \
-    && cp /usr/lib/x86_64-linux-gnu/libgdcm* /usr/local/lib/python3.10/site-packages/
+# The ucsd-strain model requires python3.7 as
+# other python versions give an "SystemError: unknown opcode" error
+RUN apt-get update && apt-get install -y virtualenv python3.7
+RUN virtualenv --python=/usr/bin/python3.7 venv
+RUN . venv/bin/activate && pip install -r requirements.txt
 
-# Install requirements and module code
-COPY requirements.txt /opt/requirements.txt
-RUN python3 -m pip install -r /opt/requirements.txt
+WORKDIR /workdir
+# Automatically enter the virtualenv when running the container
+ENV PATH=/internal/venv/bin:$PATH
 
-# Basic env setup
 WORKDIR /opt
 COPY . /opt/
-
-ENTRYPOINT [ "python3", "mock_server.py" ]
+ENTRYPOINT [ "python3", "strain_inference_server.py" ]
