@@ -1,7 +1,13 @@
-FROM tensorflow/tensorflow:2.4.1-gpu
+FROM tensorflow/tensorflow:2.5.1-gpu
 
 WORKDIR /internal
 COPY requirements.txt ./
+
+# Workaround for:
+# W: GPG error: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64  InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A4B469963BF863CC
+# E: The repository 'https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64  InRelease' is no longer signed.
+RUN rm /etc/apt/sources.list.d/cuda.list
+RUN rm /etc/apt/sources.list.d/nvidia-ml.list
 
 # Use virtualenv to run python3.7 as
 # other python versions give a "SystemError: unknown opcode" error
@@ -15,4 +21,4 @@ ENV PATH=/internal/venv/bin:$PATH
 
 WORKDIR /opt
 COPY . /opt/
-ENTRYPOINT [ "python3", "strain_inference_server.py" ]
+ENTRYPOINT [ "python3", "mock_server.py" ]
