@@ -3,6 +3,6 @@ numpy==1.22.4
 Pillow==9.3.0
 opencv-python-headless==4.6.0.66
 pydicom==1.4.2
-requests==2.22.0
+requests==2.31.0
 requests-toolbelt==0.9.1
 SimpleITK==2.1.1.2
