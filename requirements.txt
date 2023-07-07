@@ -1,5 +1,5 @@
 boto3==1.12.48
-flask==2.0.3
+flask==2.3.2
 numpy==1.22.4
 pydicom==1.4.2
 pyyaml==5.4
