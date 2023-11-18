@@ -6,7 +6,7 @@ import os
 import argparse
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import pydicom
 from utils import load_image_data, create_folder, get_pixels
 
@@ -29,10 +29,16 @@ def generate_images_with_boxes(images, boxes, output_folder):
             ul = box['top_left']
             br = box['bottom_right']
             points = [tuple(ul), (br[0], ul[1]), tuple(br), (ul[0], br[1]), tuple(ul)]
-            draw.line(points, fill="red", width=5)
-            
+            draw.line(points, fill='red', width=5)
+            # apply label at center of box
+            label = box['label']
+            font = ImageFont.truetype('OpenSans-Regular.ttf', (br[1] - ul[1]) // 20)
+            text_width, text_height = draw.textsize(label, font)
+            text_position = (ul[0] + (br[0] - ul[0] - text_width) / 2, ul[1] + (br[1] - ul[1] - text_height) / 2)
+            draw.text(text_position, label, (255, 0, 0), font)
+
             boxes.remove(box)
-            
+
         # write image to output folder
         output_filename = os.path.join(output_folder, str(index) + '_' + os.path.basename(os.path.normpath(image.path)))
         output_filename += '.png'
